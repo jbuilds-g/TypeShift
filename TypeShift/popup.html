@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #1a1a1a;
+      --border: #e5e7eb;
+      --accent: #2563eb;
+      --hover: #f3f4f6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1f2937;
+        --text: #f9fafb;
+        --border: #374151;
+        --accent: #3b82f6;
+        --hover: #374151;
+      }
+    }
+    body {
+      width: 240px;
+      margin: 0;
+      padding: 16px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    h1 {
+      font-size: 16px;
+      margin: 0 0 12px 0;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      appearance: auto;
+    }
+    select:focus {
+      outline: 2px solid var(--accent);
+      border-color: transparent;
+    }
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+    input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+    label {
+      cursor: pointer;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>TypeShift</h1>
+  
+  <select id="fontSelect">
+    <option value="" selected>Original Website Font</option>
+  </select>
+
+  <div class="toggle-container">
+    <input type="checkbox" id="excludeToggle">
+    <label for="excludeToggle">Disable on this website</label>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
