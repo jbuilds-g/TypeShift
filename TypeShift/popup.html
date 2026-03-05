@@ -27,15 +27,37 @@
     button {
       width: 100%;
       padding: 10px;
-      background: #007bff;
-      color: white;
+      margin-bottom: 8px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       font-weight: bold;
+      transition: background 0.2s, opacity 0.2s;
     }
-    button:hover {
+    #apply-btn {
+      background: #007bff;
+      color: white;
+    }
+    #apply-btn:hover:not(:disabled) {
       background: #0056b3;
+    }
+    #apply-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    #toggle-disable-btn {
+      background: #e2e8f0;
+      color: #475569;
+    }
+    #toggle-disable-btn:hover {
+      background: #cbd5e1;
+    }
+    #toggle-disable-btn.is-disabled {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    #toggle-disable-btn.is-disabled:hover {
+      background: #fecaca;
     }
     #icon-warning {
       display: none;
@@ -49,7 +71,7 @@
     }
     #status-message {
       display: none;
-      margin-top: 12px;
+      margin-top: 4px;
       padding: 10px;
       border-radius: 4px;
       font-size: 13px;
@@ -70,6 +92,7 @@
     </select>
   
   <button id="apply-btn">Apply Font Shift</button>
+  <button id="toggle-disable-btn" style="display: none;">Disable for this website</button>
 
   <div id="status-message"></div>
 
