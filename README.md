@@ -1,35 +1,28 @@
-# 🌐 TypeShift
+# TypeShift 🔡
 
-> TypeShift is a lightweight, performance-focused browser extension designed to provide a consistent reading experience by overriding website-specific typography. ✨
+> **Clean typography control. Zero fluff.**
 
-## 🚀 Overview
-
-Modern web design often prioritizes aesthetic branding over readability. **TypeShift** allows you to replace arbitrary website font-stacks with a curated selection of high-readability fonts. It is built for speed, minimal memory footprint, and seamless integration. ⚡
-
-## 💎 Core Features
-
-* **Global Font Override:** Choose from a set of predefined system and web-safe fonts to apply globally across all visited domains. 🌍
-* **Performance-Optimized Injection:** Utilizes `document_start` script injection to ensure font overrides are applied before the page renders, eliminating the annoying "Flash of Unstyled Content" (FOUC). 🏎️
-* **Icon Integrity Protection:** Features robust CSS logic to identify and protect icon fonts (e.g., Material Icons, FontAwesome, SVG-based icons), ensuring your UI stays functional. 🛡️
-* **Per-Site Exclusions:** Easily toggle the extension off for specific websites where native typography is essential. 🚫
-* **Local State Management:** Settings, font preferences, and your blacklist are stored locally via `chrome.storage.local`, keeping your privacy intact. 🔒
-
-## 🛠️ Technical Implementation
-
-* **Manifest V3:** Adheres to the latest Chrome extension architecture for better security and performance. 🛡️
-* **Dynamic Styling:** Leverages content scripts that listen for storage updates, allowing changes to propagate without page reloads. 🔄
-* **CSS Injection:** Uses carefully scoped CSS rules to target text-heavy elements while avoiding interference with icon-related classes and roles. 🎯
-
-## 📋 Usage Instructions
-
-1. **Installation:**
-   * Download the source directory.
-   * Open `chrome://extensions/` in your browser. 🖥️
-   * Enable **Developer mode**. 👨‍💻
-   * Click **Load unpacked** and select the project directory.
-2. **Configuration:**
-   * Click the **TypeShift** icon in your toolbar to open the control panel. 🖱️
-   * Select your preferred font from the dropdown. 🔤
-   * Toggle **Disable on this website** to add the current domain to your exclusion list.
-3. **Updates:**
-   * Any changes made in the popup will propagate across all tabs automatically. 💨
+> TypeShift is a lightweight browser extension that lets you take control of any website's typography. Shift between professional fonts while keeping the site's functional icons perfectly intact.
+---
+## 🚀 Features
+- **Curated Font Library:** Choose from 50+ professional fonts across Sans-Serif, Serif, Monospace, Handwriting, and Display categories.
+- **Smart Icon Protection:** Built-in "Safe Mode" logic automatically protects web icon fonts (FontAwesome, Material Icons, etc.) from being overwritten.
+- **Site-Specific Control:** Disable the font shift for specific domains with a single click.
+- **Persistent Memory:** Your preferred font and site whitelist are saved automatically via local storage.
+- **Clean UI:** Direct feedback status and active font indicators.
+---
+## 🛠 Tech Stack
+- Vanilla JavaScript
+- Chrome Extension API (Manifest v3)
+- CSS Variables & Selective Injections
+---
+## 🛠 Support & Updates
+- **Manual Updates Only:** This extension does not support automatic updates. If you face an issue, please check the GitHub repository first to ensure you are running the latest version.
+- **Report Issues:** If you encounter a bug and no update is available, please report it in the **Issues** section of this repository. We are actively working on improving the experience.
+- **Refresh Note:** When toggling the extension or disabling it for a site, you may need to **refresh the page** for the typography to revert correctly.
+---
+## ⚙️ Installation
+1. Download the source code.
+2. Navigate to `chrome://extensions` in your browser.
+3. Enable **Developer Mode**.
+4. Click **Load unpacked** and select the project folder.
