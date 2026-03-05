@@ -33,7 +33,7 @@
 1. Download the source code.
 2. Navigate to `chrome://extensions` in your browser.
 3. Enable **Developer Mode**.
-4. Click **Load unpacked** and select the project folder.
+4. Click **Load unpacked** and select the folder named **TypeShift**.
 
 ---
 
