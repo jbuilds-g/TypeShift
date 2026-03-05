@@ -1,6 +1,6 @@
 # 🌐 TypeShift
 
-TypeShift is a lightweight, performance-focused browser extension designed to provide a consistent reading experience by overriding website-specific typography. ✨
+> TypeShift is a lightweight, performance-focused browser extension designed to provide a consistent reading experience by overriding website-specific typography. ✨
 
 ## 🚀 Overview
 
