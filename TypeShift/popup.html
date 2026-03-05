@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TypeShift</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      width: 300px;
+      padding: 16px;
+      margin: 0;
+      background: #f9fafb;
+      color: #333;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+    select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #icon-warning {
+      display: none;
+      background: #fff3cd;
+      color: #856404;
+      padding: 10px;
+      margin-bottom: 12px;
+      border-left: 4px solid #ffeeba;
+      font-size: 12px;
+      border-radius: 4px;
+    }
+    #status-message {
+      display: none;
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      text-align: center;
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+  </style>
+</head>
+<body>
+  <h2>TypeShift</h2>
+  
+  <div id="icon-warning">
+    <strong>Notice:</strong> This website uses custom icon fonts. TypeShift's safe-mode is active.
+  </div>
+
+  <select id="font-select">
+    </select>
+  
+  <button id="apply-btn">Apply Font Shift</button>
+
+  <div id="status-message"></div>
+
+  <script src="fonts.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
