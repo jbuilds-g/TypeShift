@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>TypeShift</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <h2>TypeShift</h2>
+
+    <div id="icon-warning">
+      <strong>Notice:</strong> This website uses custom icon fonts. TypeShift's
+      safe-mode is active.
+    </div>
+
+    <div class="custom-dropdown" id="custom-dropdown">
+      <div class="dropdown-trigger" id="dropdown-trigger">Select Font</div>
+      <div class="dropdown-menu hidden" id="dropdown-menu">
+        <input type="text" id="font-search" placeholder="Search fonts..." />
+        <div class="font-options-list" id="font-options-list"></div>
+      </div>
+    </div>
+    <select id="font-select" style="display: none"></select>
+
+    <button id="apply-btn">Apply Font Shift</button>
+
+    <div id="scope-options">
+      <label>
+        <input type="radio" name="font-scope" value="global" checked />
+        Apply for all websites
+      </label>
+      <label>
+        <input type="radio" name="font-scope" value="site" />
+        Apply only for this website
+      </label>
+    </div>
+
+    <button id="toggle-disable-btn" style="display: none">
+      Disable for this website
+    </button>
+
+    <div id="status-message"></div>
+
+    <script src="fonts.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

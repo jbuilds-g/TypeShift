@@ -1,0 +1,145 @@
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  width: 300px;
+  padding: 16px;
+  margin: 0;
+  background: #f9fafb;
+  color: #333;
+}
+h2 {
+  margin-top: 0;
+  font-size: 18px;
+}
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
+}
+.dropdown-trigger {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  padding: 8px;
+  margin-top: 4px;
+}
+.dropdown-menu.hidden {
+  display: none;
+}
+#font-search {
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+.font-options-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+.category-header {
+  font-weight: bold;
+  font-size: 11px;
+  color: #666;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+.font-option {
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 14px;
+}
+.font-option:hover {
+  background: #f1f5f9;
+}
+button {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
+}
+#apply-btn {
+  background: #007bff;
+  color: white;
+}
+#apply-btn:hover:not(:disabled) {
+  background: #0056b3;
+}
+#apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+#scope-options {
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+#scope-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+#toggle-disable-btn {
+  background: #e2e8f0;
+  color: #475569;
+}
+#toggle-disable-btn:hover {
+  background: #cbd5e1;
+}
+#toggle-disable-btn.is-disabled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+#toggle-disable-btn.is-disabled:hover {
+  background: #fecaca;
+}
+#icon-warning {
+  display: none;
+  background: #fff3cd;
+  color: #856404;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-left: 4px solid #ffeeba;
+  font-size: 12px;
+  border-radius: 4px;
+}
+#status-message {
+  display: none;
+  margin-top: 4px;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  text-align: center;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
