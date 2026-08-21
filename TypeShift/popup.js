@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const fontSelect = document.getElementById("font-select");
-  const applyBtn = document.getElementById("apply-btn");
+  let selectedFontValue = "";
   const toggleDisableBtn = document.getElementById("toggle-disable-btn");
   const warningBox = document.getElementById("icon-warning");
   const statusMessage = document.getElementById("status-message");
@@ -36,15 +35,84 @@ document.addEventListener("DOMContentLoaded", () => {
   const dropdownTrigger = document.getElementById("dropdown-trigger");
   const dropdownMenu = document.getElementById("dropdown-menu");
   const fontOptionsList = document.getElementById("font-options-list");
+  let highlightedIndex = -1;
 
-  function setFontValue(font) {
-    fontSelect.value = font;
+  function updateHighlight(options) {
+    options.forEach((opt, idx) => {
+      opt.classList.toggle("highlighted", idx === highlightedIndex);
+    });
+    if (highlightedIndex >= 0 && options[highlightedIndex]) {
+      options[highlightedIndex].scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  function setFontValue(font, shouldApply = true) {
+    selectedFontValue = font;
     dropdownTrigger.textContent = font;
     dropdownTrigger.style.fontFamily = font;
+
+    if (shouldApply && font && !disabledDomains.includes(currentHostname)) {
+      applyCurrentFont();
+    }
+  }
+
+  function applyCurrentFont() {
+    if (!selectedFontValue) return;
+    const scope =
+      document.querySelector('input[name="font-scope"]:checked')?.value ||
+      "global";
+
+    chrome.storage.local.get(["siteFonts"], (result) => {
+      const siteFonts = result.siteFonts || {};
+
+      if (scope === "site" && currentHostname) {
+        siteFonts[currentHostname] = selectedFontValue;
+      } else if (scope === "global" && currentHostname) {
+        delete siteFonts[currentHostname];
+      }
+
+      const storageUpdate = { siteFonts };
+      if (scope === "global") {
+        storageUpdate.activeFont = selectedFontValue;
+      }
+
+      chrome.storage.local.set(storageUpdate, () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (!tabs[0]) return;
+          chrome.tabs.sendMessage(
+            tabs[0].id,
+            {
+              action: "applyFont",
+              fontFamily: selectedFontValue,
+            },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                showStatus("Refreshing page to apply font...");
+                const tabId = tabs[0].id;
+                const onUpdated = (updatedTabId, changeInfo) => {
+                  if (
+                    updatedTabId === tabId &&
+                    changeInfo.status === "complete"
+                  ) {
+                    showStatus(`Success! Active font: ${selectedFontValue}`);
+                    chrome.tabs.onUpdated.removeListener(onUpdated);
+                  }
+                };
+                chrome.tabs.onUpdated.addListener(onUpdated);
+                chrome.tabs.reload(tabId);
+                return;
+              }
+              if (response && response.success) {
+                showStatus(`Success! Active font: ${selectedFontValue}`);
+              }
+            },
+          );
+        });
+      });
+    });
   }
 
   function populateFonts(filterText = "") {
-    fontSelect.innerHTML = "";
     fontOptionsList.innerHTML = "";
     const query = filterText.toLowerCase().trim();
 
@@ -54,20 +122,12 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       if (matchingFonts.length === 0) continue;
 
-      const optgroup = document.createElement("optgroup");
-      optgroup.label = category.toUpperCase();
-
       const categoryHeader = document.createElement("div");
       categoryHeader.className = "category-header";
       categoryHeader.textContent = category.toUpperCase();
       fontOptionsList.appendChild(categoryHeader);
 
       matchingFonts.forEach((font) => {
-        const option = document.createElement("option");
-        option.value = font;
-        option.textContent = font;
-        optgroup.appendChild(option);
-
         const item = document.createElement("div");
         item.className = "font-option";
         item.textContent = font;
@@ -78,8 +138,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         fontOptionsList.appendChild(item);
       });
-
-      fontSelect.appendChild(optgroup);
     }
   }
 
@@ -90,6 +148,8 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopPropagation();
       dropdownMenu.classList.toggle("hidden");
       if (!dropdownMenu.classList.contains("hidden")) {
+        highlightedIndex = -1;
+        updateHighlight(fontOptionsList.querySelectorAll(".font-option"));
         fontSearch.focus();
       }
     });
@@ -103,7 +163,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (fontSearch) {
     fontSearch.addEventListener("input", (e) => {
+      highlightedIndex = -1;
       populateFonts(e.target.value);
+    });
+
+    fontSearch.addEventListener("keydown", (e) => {
+      const options = Array.from(
+        fontOptionsList.querySelectorAll(".font-option"),
+      );
+      if (!options.length) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        highlightedIndex = (highlightedIndex + 1) % options.length;
+        updateHighlight(options);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        highlightedIndex =
+          (highlightedIndex - 1 + options.length) % options.length;
+        updateHighlight(options);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (highlightedIndex >= 0 && options[highlightedIndex]) {
+          options[highlightedIndex].click();
+        }
+      } else if (e.key === "Escape") {
+        dropdownMenu.classList.add("hidden");
+      }
     });
   }
 
@@ -112,13 +198,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (disabledDomains.includes(currentHostname)) {
       toggleDisableBtn.textContent = "Enable for this website";
       toggleDisableBtn.classList.add("is-disabled");
-      applyBtn.disabled = true;
     } else {
       toggleDisableBtn.textContent = "Disable for this website";
       toggleDisableBtn.classList.remove("is-disabled");
-      applyBtn.disabled = false;
     }
   }
+
+  document.querySelectorAll('input[name="font-scope"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
+      if (!disabledDomains.includes(currentHostname)) {
+        applyCurrentFont();
+      }
+    });
+  });
 
   // 1. Get current tab details
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -144,11 +236,11 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
         if (currentHostname && siteFonts[currentHostname]) {
-          setFontValue(siteFonts[currentHostname]);
+          setFontValue(siteFonts[currentHostname], false);
           if (siteRadio) siteRadio.checked = true;
           showStatus(`Site font: ${siteFonts[currentHostname]}`);
         } else if (result.activeFont) {
-          setFontValue(result.activeFont);
+          setFontValue(result.activeFont, false);
           if (globalRadio) globalRadio.checked = true;
           showStatus(`Global font: ${result.activeFont}`);
         }
@@ -171,51 +263,6 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   });
 
-  // Apply Font based on selected scope
-  applyBtn.addEventListener("click", () => {
-    const selectedFont = fontSelect.value;
-    const scope =
-      document.querySelector('input[name="font-scope"]:checked')?.value ||
-      "global";
-
-    chrome.storage.local.get(["siteFonts"], (result) => {
-      const siteFonts = result.siteFonts || {};
-
-      if (scope === "site" && currentHostname) {
-        siteFonts[currentHostname] = selectedFont;
-      } else if (scope === "global" && currentHostname) {
-        delete siteFonts[currentHostname];
-      }
-
-      const storageUpdate = { siteFonts };
-      if (scope === "global") {
-        storageUpdate.activeFont = selectedFont;
-      }
-
-      chrome.storage.local.set(storageUpdate, () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          if (!tabs[0]) return;
-          chrome.tabs.sendMessage(
-            tabs[0].id,
-            {
-              action: "applyFont",
-              fontFamily: selectedFont,
-            },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                showStatus("Cannot apply to this page.", true);
-                return;
-              }
-              if (response && response.success) {
-                showStatus(`Success! Active font: ${selectedFont}`);
-              }
-            },
-          );
-        });
-      });
-    });
-  });
-
   // Toggle Disable/Enable for specific domain
   toggleDisableBtn.addEventListener("click", () => {
     if (disabledDomains.includes(currentHostname)) {
@@ -227,7 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       chrome.storage.local.set({ disabledDomains }, () => {
         updateToggleUI();
-        const fontToApply = fontSelect.value;
+        const fontToApply = selectedFontValue;
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           chrome.tabs.sendMessage(tabs[0].id, {
             action: "applyFont",
