@@ -15,5 +15,11 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"]
     }
-  ]
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "typeshift@jbuilds.dev",
+      "strict_min_version": "109.0"
+    }
+  }
 }
