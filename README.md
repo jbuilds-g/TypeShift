@@ -4,8 +4,6 @@
 
 > TypeShift is a lightweight browser extension that lets you take control of any website's typography. Shift between professional fonts while keeping the site's functional icons perfectly intact.
 
-[![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-v1.3.0-blue?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/fjjgfiknkoijbedfcpfeckaifhfmhonm?utm_source=item-share-cb) [![Mozilla Add-ons](https://img.shields.io/badge/Firefox_Add--ons-v1.3.0-orange?logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/typeshift-ext/)
-
 ---
 
 ## 🚀 Features
@@ -36,10 +34,29 @@
 
 ## ⚙️ Installation
 
-1. Download the source code.
-2. Navigate to `chrome://extensions` in your browser.
-3. Enable **Developer Mode**.
-4. Click **Load unpacked** and select the folder named **TypeShift**.
+#### Firefox
+
+1. **Install directly from Firefox Add-ons:**
+
+<a href="https://addons.mozilla.org/firefox/addon/typeshift-ext/"><img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Download from Mozilla Add-ons" height="48" /></a>
+
+2. **Manual Installation (.xpi):**
+   - Download `typeshift-firefox-v1.3.0.zip` from [Releases](https://github.com/jbuilds-g/TypeShift/releases/latest).
+   - Open `about:addons` in Firefox.
+   - Click the gear icon and select **Install Add-on From File...**.
+
+#### Chromium (Chrome, Edge, Brave)
+
+1. **Install directly from the Chrome Web Store:**
+
+<a href="https://chromewebstore.google.com/detail/fjjgfiknkoijbedfcpfeckaifhfmhonm?utm_source=item-share-cb"><img src="https://raw.githubusercontent.com/GoogleChrome/webstore-docs/master/assets/cws-badge-1-120x36.png" alt="Available in the Chrome Web Store" height="48" /></a>
+
+2. **Manual Unpacked Loading:**
+   - Download `typeshift-chrome-v1.3.0.zip` from [Releases](https://github.com/jbuilds-g/TypeShift/releases/latest).
+   - Extract the archive to a local directory.
+   - Open `chrome://extensions` in your browser.
+   - Enable **Developer Mode** in the top-right corner.
+   - Click **Load unpacked** and select the extracted folder.
 
 ---
 
