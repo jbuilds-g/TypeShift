@@ -49,7 +49,7 @@
 
 1. **Install directly from the Chrome Web Store:**
 
-<a href="https://chromewebstore.google.com/detail/fjjgfiknkoijbedfcpfeckaifhfmhonm?utm_source=item-share-cb"><img src="https://raw.githubusercontent.com/GoogleChrome/webstore-docs/master/assets/cws-badge-1-120x36.png" alt="Available in the Chrome Web Store" height="48" /></a>
+ <a href="https://chromewebstore.google.com/detail/fjjgfiknkoijbedfcpfeckaifhfmhonm?utm_source=item-share-cb"><img src="https://github.com/user-attachments/assets/7a829ba4-dcd0-452b-922a-5efacbfda498" alt="Download from Chrome Web Store" height="48" /></a>
 
 2. **Manual Unpacked Loading:**
    - Download `typeshift-chrome-v1.3.0.zip` from [Releases](https://github.com/jbuilds-g/TypeShift/releases/latest).
