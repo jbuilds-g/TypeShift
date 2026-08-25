@@ -41,7 +41,7 @@
 <a href="https://addons.mozilla.org/firefox/addon/typeshift-ext/"><img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Download from Mozilla Add-ons" height="48" /></a>
 
 2. **Manual Installation (.xpi):**
-   - Download `typeshift-firefox-v1.3.0.zip` from [Releases](https://github.com/jbuilds-g/TypeShift/releases/latest).
+   - Download `typeshift_ext-1.3.0.xpi` from [Releases](https://github.com/jbuilds-g/TypeShift/releases/latest).
    - Open `about:addons` in Firefox.
    - Click the gear icon and select **Install Add-on From File...**.
 
