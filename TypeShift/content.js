@@ -50,32 +50,12 @@ function applyFontShift(fontFamily) {
     }
 
     /*
-     * Change typography without flattening the site's icon system.
-     * Icon fonts are commonly rendered through pseudo-elements, so
-     * protecting the host element also protects its ::before/::after glyph.
+     * Apply the selected font broadly, but leave common icon hosts alone.
+     * This protects icon fonts and SVG icons without excluding every <i>
+     * element, which would also break ordinary italic text.
      */
-    body,
-    body :where(
-      p, h1, h2, h3, h4, h5, h6,
-      li, dt, dd, blockquote, pre, code,
-      input, textarea, select, button, label,
-      table, caption, th, td, a
-    ) {
+    *:not(svg):not([role="img"]):not([aria-hidden="true"]):not([class*="icon"]):not([class*="Icon"]):not([class*="fa-"]):not([class*="fas-"]):not([class*="fab-"]):not([class*="far-"]):not([class*="mdi-"]):not([class*="bi-"]):not([class*="ri-"]):not([class*="ti-"]):not([class*="glyphicon-"]):not([class*="codicon-"]):not([class*="octicon-"]):not([class*="lucide-"]):not([class*="ph-"]):not([class*="feather-"]):not(.material-icons):not(.material-symbols-outlined):not(.material-symbols-rounded):not(.material-symbols-sharp):not(i[class]) {
       font-family: var(--typeshift-global-font) !important;
-    }
-
-    body :where(
-      svg, [role="img"], [aria-hidden="true"],
-      [class*="icon"], [class*="Icon"],
-      [class*="fa-"], [class*="fas-"], [class*="fab-"], [class*="far-"],
-      [class*="mdi-"], [class*="bi-"], [class*="ri-"], [class*="ti-"],
-      [class*="glyphicon-"], [class*="codicon-"], [class*="octicon-"],
-      [class*="lucide-"], [class*="ph-"], [class*="feather-"],
-      .material-icons, .material-symbols-outlined,
-      .material-symbols-rounded, .material-symbols-sharp,
-      i[class]
-    ) {
-      font-family: inherit !important;
     }
   `;
 }
