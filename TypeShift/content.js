@@ -197,19 +197,22 @@ function loadGoogleFontStylesheet(fontFamily) {
   const existingLink = document.getElementById(linkId);
 
   if (existingLink?.getAttribute("href") === href) {
-    return Promise.resolve();
+    return Promise.resolve(true);
   }
 
   existingLink?.remove();
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const link = document.createElement("link");
     link.id = linkId;
     link.rel = "stylesheet";
     link.href = href;
 
-    link.onload = () => resolve();
-    link.onerror = () => reject(new Error("Google Fonts stylesheet failed to load"));
+    link.onload = () => resolve(true);
+    link.onerror = () => {
+      console.warn(`TypeShift: Google Fonts unavailable for "${fontFamily}"; using the local font if available.`);
+      resolve(false);
+    };
 
     (document.head || document.documentElement).appendChild(link);
   });
@@ -252,7 +255,7 @@ async function waitForFont(fontFamily) {
   try {
     await document.fonts.load(`16px "${fontFamily}"`);
   } catch (error) {
-    console.warn("TypeShift: font load check failed", error);
+    console.warn(`TypeShift: font load check failed for "${fontFamily}"`, error);
   }
 }
 
