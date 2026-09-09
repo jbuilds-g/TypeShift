@@ -3,15 +3,31 @@ function detectIcons() {
     'link[href*="font-awesome"]',
     'link[href*="fontawesome"]',
     'link[href*="material-icons"]',
+    'link[href*="material-symbols"]',
     '[class*="fa-"]',
+    '[class*="fas-"]',
+    '[class*="fab-"]',
+    '[class*="far-"]',
     '[class*="icon-"]',
-    ".material-icons",
+    '[class*="Icon"]',
+    '[class*="mdi-"]',
+    '[class*="bi-"]',
+    '[class*="ri-"]',
+    '[class*="ti-"]',
+    '[class*="glyphicon-"]',
+    '[class*="codicon-"]',
+    '[class*="octicon-"]',
+    '[class*="lucide-"]',
+    '[class*="ph-"]',
+    '[class*="feather-"]',
+    '.material-icons',
+    '.material-symbols-outlined',
+    '.material-symbols-rounded',
+    '.material-symbols-sharp',
+    'svg',
   ];
 
-  for (let selector of iconSignatures) {
-    if (document.querySelector(selector)) return true;
-  }
-  return false;
+  return iconSignatures.some((selector) => document.querySelector(selector));
 }
 
 function applyFontShift(fontFamily) {
@@ -21,7 +37,7 @@ function applyFontShift(fontFamily) {
   if (!styleEl) {
     styleEl = document.createElement("style");
     styleEl.id = styleId;
-    document.head.appendChild(styleEl);
+    (document.head || document.documentElement).appendChild(styleEl);
   }
 
   const fontUrlParam = encodeURIComponent(fontFamily).replace(/%20/g, "+");
@@ -30,11 +46,36 @@ function applyFontShift(fontFamily) {
     @import url('https://fonts.googleapis.com/css2?family=${fontUrlParam}&display=swap');
 
     :root {
-      --typeshift-global-font: "${fontFamily}", sans-serif !important;
+      --typeshift-global-font: "${fontFamily}", sans-serif;
     }
-    
-    *:not(i):not([class*="icon"]):not([class*="fa"]):not([class*="fas"]):not([class*="fab"]):not([class*="far"]):not([class*="mdi"]):not(.material-icons):not([class*="typcn"]) {
-      font-family: var(--typeshift-global-font);
+
+    /*
+     * Change typography without flattening the site's icon system.
+     * Icon fonts are commonly rendered through pseudo-elements, so
+     * protecting the host element also protects its ::before/::after glyph.
+     */
+    body,
+    body :where(
+      p, h1, h2, h3, h4, h5, h6,
+      li, dt, dd, blockquote, pre, code,
+      input, textarea, select, button, label,
+      table, caption, th, td, a
+    ) {
+      font-family: var(--typeshift-global-font) !important;
+    }
+
+    body :where(
+      svg, [role="img"], [aria-hidden="true"],
+      [class*="icon"], [class*="Icon"],
+      [class*="fa-"], [class*="fas-"], [class*="fab-"], [class*="far-"],
+      [class*="mdi-"], [class*="bi-"], [class*="ri-"], [class*="ti-"],
+      [class*="glyphicon-"], [class*="codicon-"], [class*="octicon-"],
+      [class*="lucide-"], [class*="ph-"], [class*="feather-"],
+      .material-icons, .material-symbols-outlined,
+      .material-symbols-rounded, .material-symbols-sharp,
+      i[class]
+    ) {
+      font-family: inherit !important;
     }
   `;
 }
