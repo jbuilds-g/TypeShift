@@ -3,15 +3,31 @@ function detectIcons() {
     'link[href*="font-awesome"]',
     'link[href*="fontawesome"]',
     'link[href*="material-icons"]',
+    'link[href*="material-symbols"]',
     '[class*="fa-"]',
+    '[class*="fas-"]',
+    '[class*="fab-"]',
+    '[class*="far-"]',
     '[class*="icon-"]',
-    ".material-icons",
+    '[class*="Icon"]',
+    '[class*="mdi-"]',
+    '[class*="bi-"]',
+    '[class*="ri-"]',
+    '[class*="ti-"]',
+    '[class*="glyphicon-"]',
+    '[class*="codicon-"]',
+    '[class*="octicon-"]',
+    '[class*="lucide-"]',
+    '[class*="ph-"]',
+    '[class*="feather-"]',
+    '.material-icons',
+    '.material-symbols-outlined',
+    '.material-symbols-rounded',
+    '.material-symbols-sharp',
+    'svg',
   ];
 
-  for (let selector of iconSignatures) {
-    if (document.querySelector(selector)) return true;
-  }
-  return false;
+  return iconSignatures.some((selector) => document.querySelector(selector));
 }
 
 function applyFontShift(fontFamily) {
@@ -21,7 +37,7 @@ function applyFontShift(fontFamily) {
   if (!styleEl) {
     styleEl = document.createElement("style");
     styleEl.id = styleId;
-    document.head.appendChild(styleEl);
+    (document.head || document.documentElement).appendChild(styleEl);
   }
 
   const fontUrlParam = encodeURIComponent(fontFamily).replace(/%20/g, "+");
@@ -30,11 +46,16 @@ function applyFontShift(fontFamily) {
     @import url('https://fonts.googleapis.com/css2?family=${fontUrlParam}&display=swap');
 
     :root {
-      --typeshift-global-font: "${fontFamily}", sans-serif !important;
+      --typeshift-global-font: "${fontFamily}", sans-serif;
     }
-    
-    *:not(i):not([class*="icon"]):not([class*="fa"]):not([class*="fas"]):not([class*="fab"]):not([class*="far"]):not([class*="mdi"]):not(.material-icons):not([class*="typcn"]) {
-      font-family: var(--typeshift-global-font);
+
+    /*
+     * Apply the selected font broadly, but leave common icon hosts alone.
+     * This protects icon fonts and SVG icons without excluding every <i>
+     * element, which would also break ordinary italic text.
+     */
+    *:not(svg):not([role="img"]):not([aria-hidden="true"]):not([class*="icon"]):not([class*="Icon"]):not([class*="fa-"]):not([class*="fas-"]):not([class*="fab-"]):not([class*="far-"]):not([class*="mdi-"]):not([class*="bi-"]):not([class*="ri-"]):not([class*="ti-"]):not([class*="glyphicon-"]):not([class*="codicon-"]):not([class*="octicon-"]):not([class*="lucide-"]):not([class*="ph-"]):not([class*="feather-"]):not(.material-icons):not(.material-symbols-outlined):not(.material-symbols-rounded):not(.material-symbols-sharp):not(i[class]) {
+      font-family: var(--typeshift-global-font) !important;
     }
   `;
 }
