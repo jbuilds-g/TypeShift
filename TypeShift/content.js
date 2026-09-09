@@ -197,25 +197,22 @@ function loadGoogleFontStylesheet(fontFamily) {
   const existingLink = document.getElementById(linkId);
 
   if (existingLink?.getAttribute("href") === href) {
-    return Promise.resolve(true);
+    return existingLink;
   }
 
   existingLink?.remove();
 
-  return new Promise((resolve) => {
-    const link = document.createElement("link");
-    link.id = linkId;
-    link.rel = "stylesheet";
-    link.href = href;
+  const link = document.createElement("link");
+  link.id = linkId;
+  link.rel = "stylesheet";
+  link.href = href;
 
-    link.onload = () => resolve(true);
-    link.onerror = () => {
-      console.warn(`TypeShift: Google Fonts unavailable for "${fontFamily}"; using the local font if available.`);
-      resolve(false);
-    };
+  link.addEventListener("error", () => {
+    console.warn(`TypeShift: Google Fonts unavailable for "${fontFamily}"; using the local font if available.`);
+  }, { once: true });
 
-    (document.head || document.documentElement).appendChild(link);
-  });
+  (document.head || document.documentElement).appendChild(link);
+  return link;
 }
 
 function installFontStyles(fontFamily) {
@@ -263,17 +260,19 @@ async function applyFontShift(fontFamily) {
   const currentToken = ++fontLoadToken;
 
   try {
-    await loadGoogleFontStylesheet(fontFamily);
+    // Apply the CSS immediately. Font loading must never block the visual change.
+    installFontStyles(fontFamily);
+    startIconProtection();
 
-    if (currentToken !== fontLoadToken) return;
-
-    const styleEl = installFontStyles(fontFamily);
+    // Load the web font in parallel. Local/system fonts work without this request.
+    loadGoogleFontStylesheet(fontFamily);
     await waitForFont(fontFamily);
 
     if (currentToken !== fontLoadToken) return;
 
-    void styleEl.offsetHeight;
-    startIconProtection();
+    // Re-check after the selected web font has finished loading because its
+    // @font-face rules can change the computed font of existing elements.
+    queueIconProtection();
   } catch (error) {
     console.error("TypeShift: unable to apply font", error);
   }
