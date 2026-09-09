@@ -45,6 +45,7 @@ const ICON_CLASS_SELECTORS = [
 ];
 
 let iconProtectionObserver = null;
+let fontLoadToken = 0;
 
 function detectIcons() {
   const iconSignatures = [
@@ -123,7 +124,36 @@ function stopIconProtection() {
   });
 }
 
-function applyFontShift(fontFamily) {
+function getGoogleFontUrl(fontFamily) {
+  const encoded = encodeURIComponent(fontFamily).replace(/%20/g, "+");
+  return `https://fonts.googleapis.com/css2?family=${encoded}&display=swap`;
+}
+
+function loadGoogleFontStylesheet(fontFamily) {
+  const linkId = "typeshift-google-font";
+  const href = getGoogleFontUrl(fontFamily);
+  const existingLink = document.getElementById(linkId);
+
+  if (existingLink?.getAttribute("href") === href) {
+    return Promise.resolve();
+  }
+
+  existingLink?.remove();
+
+  return new Promise((resolve, reject) => {
+    const link = document.createElement("link");
+    link.id = linkId;
+    link.rel = "stylesheet";
+    link.href = href;
+
+    link.onload = () => resolve();
+    link.onerror = () => reject(new Error("Google Fonts stylesheet failed to load"));
+
+    (document.head || document.documentElement).appendChild(link);
+  });
+}
+
+function installFontStyles(fontFamily) {
   const styleId = "typeshift-custom-styles";
   let styleEl = document.getElementById(styleId);
 
@@ -133,11 +163,7 @@ function applyFontShift(fontFamily) {
     (document.head || document.documentElement).appendChild(styleEl);
   }
 
-  const fontUrlParam = encodeURIComponent(fontFamily).replace(/%20/g, "+");
-
   styleEl.textContent = `
-    @import url('https://fonts.googleapis.com/css2?family=${fontUrlParam}&display=swap');
-
     :root {
       --typeshift-global-font: "${fontFamily}", sans-serif;
     }
@@ -155,16 +181,51 @@ function applyFontShift(fontFamily) {
     }
   `;
 
-  startIconProtection();
+  return styleEl;
+}
+
+async function waitForFont(fontFamily) {
+  if (!document.fonts) return;
+
+  try {
+    await document.fonts.load(`16px "${fontFamily}"`);
+  } catch (error) {
+    console.warn("TypeShift: font load check failed", error);
+  }
+}
+
+async function applyFontShift(fontFamily) {
+  const currentToken = ++fontLoadToken;
+
+  try {
+    await loadGoogleFontStylesheet(fontFamily);
+
+    if (currentToken !== fontLoadToken) return;
+
+    const styleEl = installFontStyles(fontFamily);
+    await waitForFont(fontFamily);
+
+    if (currentToken !== fontLoadToken) return;
+
+    // Force a style/layout read after the font is available so the live page
+    // immediately recalculates text using the newly loaded face.
+    void styleEl.offsetHeight;
+    startIconProtection();
+  } catch (error) {
+    console.error("TypeShift: unable to apply font", error);
+  }
 }
 
 function removeFontShift() {
+  fontLoadToken++;
   stopIconProtection();
 
   const styleEl = document.getElementById("typeshift-custom-styles");
   if (styleEl) {
     styleEl.remove();
   }
+
+  document.getElementById("typeshift-google-font")?.remove();
 }
 
 // Listen for interactions from the popup
