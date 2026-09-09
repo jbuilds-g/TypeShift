@@ -129,32 +129,6 @@ function getGoogleFontUrl(fontFamily) {
   return `https://fonts.googleapis.com/css2?family=${encoded}&display=swap`;
 }
 
-async function loadFont(fontFamily) {
-  const fontUrl = getGoogleFontUrl(fontFamily);
-
-  if (document.fonts && document.fonts.check(`16px "${fontFamily}"`)) {
-    return;
-  }
-
-  const response = await fetch(fontUrl);
-  if (!response.ok) {
-    throw new Error(`Font stylesheet request failed: ${response.status}`);
-  }
-
-  const css = await response.text();
-  const fontFaceUrls = [...css.matchAll(/url\((['"]?)([^'")]+)\1\)/g)].map(
-    (match) => match[2],
-  );
-
-  if (!fontFaceUrls.length) {
-    throw new Error("No font file found in Google Fonts stylesheet");
-  }
-
-  const fontFace = new FontFace(fontFamily, `url("${fontFaceUrls[0]}")`);
-  await fontFace.load();
-  document.fonts.add(fontFace);
-}
-
 function installFontStyles(fontFamily) {
   const styleId = "typeshift-custom-styles";
   let styleEl = document.getElementById(styleId);
@@ -166,6 +140,8 @@ function installFontStyles(fontFamily) {
   }
 
   styleEl.textContent = `
+    @import url('${getGoogleFontUrl(fontFamily)}');
+
     :root {
       --typeshift-global-font: "${fontFamily}", sans-serif;
     }
@@ -182,21 +158,32 @@ function installFontStyles(fontFamily) {
       font-family: var(--typeshift-original-font) !important;
     }
   `;
+
+  return styleEl;
+}
+
+async function waitForFont(fontFamily) {
+  if (!document.fonts) return;
+
+  try {
+    await document.fonts.load(`16px "${fontFamily}"`);
+  } catch (error) {
+    console.warn("TypeShift: font load check failed", error);
+  }
 }
 
 async function applyFontShift(fontFamily) {
   const currentToken = ++fontLoadToken;
 
-  try {
-    await loadFont(fontFamily);
+  const styleEl = installFontStyles(fontFamily);
+  await waitForFont(fontFamily);
 
-    if (currentToken !== fontLoadToken) return;
+  if (currentToken !== fontLoadToken) return;
 
-    installFontStyles(fontFamily);
-    startIconProtection();
-  } catch (error) {
-    console.error("TypeShift: unable to load font", error);
-  }
+  // Force a style/layout read after the font is available so the live page
+  // immediately recalculates text using the newly loaded face.
+  void styleEl.offsetHeight;
+  startIconProtection();
 }
 
 function removeFontShift() {
