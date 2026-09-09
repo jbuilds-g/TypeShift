@@ -129,6 +129,30 @@ function getGoogleFontUrl(fontFamily) {
   return `https://fonts.googleapis.com/css2?family=${encoded}&display=swap`;
 }
 
+function loadGoogleFontStylesheet(fontFamily) {
+  const linkId = "typeshift-google-font";
+  const href = getGoogleFontUrl(fontFamily);
+  const existingLink = document.getElementById(linkId);
+
+  if (existingLink?.getAttribute("href") === href) {
+    return Promise.resolve();
+  }
+
+  existingLink?.remove();
+
+  return new Promise((resolve, reject) => {
+    const link = document.createElement("link");
+    link.id = linkId;
+    link.rel = "stylesheet";
+    link.href = href;
+
+    link.onload = () => resolve();
+    link.onerror = () => reject(new Error("Google Fonts stylesheet failed to load"));
+
+    (document.head || document.documentElement).appendChild(link);
+  });
+}
+
 function installFontStyles(fontFamily) {
   const styleId = "typeshift-custom-styles";
   let styleEl = document.getElementById(styleId);
@@ -140,8 +164,6 @@ function installFontStyles(fontFamily) {
   }
 
   styleEl.textContent = `
-    @import url('${getGoogleFontUrl(fontFamily)}');
-
     :root {
       --typeshift-global-font: "${fontFamily}", sans-serif;
     }
@@ -175,15 +197,23 @@ async function waitForFont(fontFamily) {
 async function applyFontShift(fontFamily) {
   const currentToken = ++fontLoadToken;
 
-  const styleEl = installFontStyles(fontFamily);
-  await waitForFont(fontFamily);
+  try {
+    await loadGoogleFontStylesheet(fontFamily);
 
-  if (currentToken !== fontLoadToken) return;
+    if (currentToken !== fontLoadToken) return;
 
-  // Force a style/layout read after the font is available so the live page
-  // immediately recalculates text using the newly loaded face.
-  void styleEl.offsetHeight;
-  startIconProtection();
+    const styleEl = installFontStyles(fontFamily);
+    await waitForFont(fontFamily);
+
+    if (currentToken !== fontLoadToken) return;
+
+    // Force a style/layout read after the font is available so the live page
+    // immediately recalculates text using the newly loaded face.
+    void styleEl.offsetHeight;
+    startIconProtection();
+  } catch (error) {
+    console.error("TypeShift: unable to apply font", error);
+  }
 }
 
 function removeFontShift() {
@@ -194,6 +224,8 @@ function removeFontShift() {
   if (styleEl) {
     styleEl.remove();
   }
+
+  document.getElementById("typeshift-google-font")?.remove();
 }
 
 // Listen for interactions from the popup
