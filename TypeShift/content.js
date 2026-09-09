@@ -45,6 +45,8 @@ const ICON_CLASS_SELECTORS = [
 ];
 
 let iconProtectionObserver = null;
+let iconProtectionFrame = 0;
+let iconProtectionPending = new Set();
 let fontLoadToken = 0;
 
 function detectIcons() {
@@ -65,32 +67,63 @@ function looksLikeIconFont(fontFamily) {
   return ICON_FONT_HINTS.some((hint) => normalized.includes(hint));
 }
 
+function protectIconElement(element) {
+  if (!(element instanceof Element)) return;
+
+  if (
+    element.hasAttribute("data-typeshift-icon-font") ||
+    element.matches("svg, [role=\"img\"], [aria-hidden=\"true\"]")
+  ) {
+    return;
+  }
+
+  const computedFont = window.getComputedStyle(element).fontFamily;
+  if (looksLikeIconFont(computedFont)) {
+    element.setAttribute("data-typeshift-icon-font", "");
+    element.style.setProperty(
+      "--typeshift-original-font",
+      computedFont,
+    );
+  }
+}
+
 function protectIconFonts(root = document) {
+  if (root instanceof Element) {
+    protectIconElement(root);
+  }
+
   const elements = root.querySelectorAll
     ? root.querySelectorAll("*")
     : [];
 
-  elements.forEach((element) => {
-    if (
-      element.hasAttribute("data-typeshift-icon-font") ||
-      element.matches("svg, [role=\"img\"], [aria-hidden=\"true\"]")
-    ) {
-      return;
-    }
+  elements.forEach(protectIconElement);
+}
 
-    const computedFont = window.getComputedStyle(element).fontFamily;
-    if (looksLikeIconFont(computedFont)) {
-      element.setAttribute("data-typeshift-icon-font", "");
-      element.style.setProperty(
-        "--typeshift-original-font",
-        computedFont,
-      );
-    }
+function queueIconProtection(element = document) {
+  if (element instanceof Element) {
+    iconProtectionPending.add(element);
+  } else {
+    iconProtectionPending.add(document.documentElement);
+  }
+
+  if (iconProtectionFrame) return;
+
+  iconProtectionFrame = requestAnimationFrame(() => {
+    iconProtectionFrame = 0;
+
+    const pending = [...iconProtectionPending];
+    iconProtectionPending.clear();
+
+    pending.forEach((root) => {
+      if (root.isConnected) {
+        protectIconFonts(root);
+      }
+    });
   });
 }
 
 function startIconProtection() {
-  protectIconFonts();
+  queueIconProtection();
 
   if (iconProtectionObserver) {
     iconProtectionObserver.disconnect();
@@ -98,24 +131,53 @@ function startIconProtection() {
 
   iconProtectionObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          protectIconFonts(node);
-        }
-      });
+      if (mutation.type === "childList") {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            queueIconProtection(node);
+          }
+        });
+      }
+
+      if (
+        mutation.type === "attributes" &&
+        (mutation.attributeName === "class" ||
+          mutation.attributeName === "style" ||
+          mutation.attributeName === "aria-hidden" ||
+          mutation.attributeName === "role")
+      ) {
+        queueIconProtection(mutation.target);
+      }
     });
   });
 
   iconProtectionObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class", "style", "aria-hidden", "role"],
     childList: true,
     subtree: true,
   });
+
+  if (document.fonts) {
+    document.fonts.addEventListener("loadingdone", queueIconProtection);
+  }
 }
 
 function stopIconProtection() {
   if (iconProtectionObserver) {
     iconProtectionObserver.disconnect();
     iconProtectionObserver = null;
+  }
+
+  if (iconProtectionFrame) {
+    cancelAnimationFrame(iconProtectionFrame);
+    iconProtectionFrame = 0;
+  }
+
+  iconProtectionPending.clear();
+
+  if (document.fonts) {
+    document.fonts.removeEventListener("loadingdone", queueIconProtection);
   }
 
   document.querySelectorAll("[data-typeshift-icon-font]").forEach((element) => {
@@ -135,22 +197,22 @@ function loadGoogleFontStylesheet(fontFamily) {
   const existingLink = document.getElementById(linkId);
 
   if (existingLink?.getAttribute("href") === href) {
-    return Promise.resolve();
+    return existingLink;
   }
 
   existingLink?.remove();
 
-  return new Promise((resolve, reject) => {
-    const link = document.createElement("link");
-    link.id = linkId;
-    link.rel = "stylesheet";
-    link.href = href;
+  const link = document.createElement("link");
+  link.id = linkId;
+  link.rel = "stylesheet";
+  link.href = href;
 
-    link.onload = () => resolve();
-    link.onerror = () => reject(new Error("Google Fonts stylesheet failed to load"));
+  link.addEventListener("error", () => {
+    console.warn(`TypeShift: Google Fonts unavailable for "${fontFamily}"; using the local font if available.`);
+  }, { once: true });
 
-    (document.head || document.documentElement).appendChild(link);
-  });
+  (document.head || document.documentElement).appendChild(link);
+  return link;
 }
 
 function installFontStyles(fontFamily) {
@@ -190,7 +252,7 @@ async function waitForFont(fontFamily) {
   try {
     await document.fonts.load(`16px "${fontFamily}"`);
   } catch (error) {
-    console.warn("TypeShift: font load check failed", error);
+    console.warn(`TypeShift: font load check failed for "${fontFamily}"`, error);
   }
 }
 
@@ -198,19 +260,19 @@ async function applyFontShift(fontFamily) {
   const currentToken = ++fontLoadToken;
 
   try {
-    await loadGoogleFontStylesheet(fontFamily);
+    // Apply the CSS immediately. Font loading must never block the visual change.
+    installFontStyles(fontFamily);
+    startIconProtection();
 
-    if (currentToken !== fontLoadToken) return;
-
-    const styleEl = installFontStyles(fontFamily);
+    // Load the web font in parallel. Local/system fonts work without this request.
+    loadGoogleFontStylesheet(fontFamily);
     await waitForFont(fontFamily);
 
     if (currentToken !== fontLoadToken) return;
 
-    // Force a style/layout read after the font is available so the live page
-    // immediately recalculates text using the newly loaded face.
-    void styleEl.offsetHeight;
-    startIconProtection();
+    // Re-check after the selected web font has finished loading because its
+    // @font-face rules can change the computed font of existing elements.
+    queueIconProtection();
   } catch (error) {
     console.error("TypeShift: unable to apply font", error);
   }
