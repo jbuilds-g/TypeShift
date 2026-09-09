@@ -44,7 +44,16 @@ const ICON_CLASS_SELECTORS = [
   '.material-symbols-sharp',
 ];
 
+const ICON_CANDIDATE_SELECTOR = [
+  ...ICON_CLASS_SELECTORS,
+  'i[class]',
+  '[aria-hidden="true"]',
+  '[role="img"]',
+].join(",");
+
 let iconProtectionObserver = null;
+let iconProtectionFrame = null;
+let iconProtectionPending = new Set();
 
 function detectIcons() {
   const iconSignatures = [
@@ -64,32 +73,54 @@ function looksLikeIconFont(fontFamily) {
   return ICON_FONT_HINTS.some((hint) => normalized.includes(hint));
 }
 
-function protectIconFonts(root = document) {
-  const elements = root.querySelectorAll
-    ? root.querySelectorAll("*")
-    : [];
+function protectIconElement(element) {
+  if (
+    element.hasAttribute("data-typeshift-icon-font") ||
+    element.matches("svg, [role=\"img\"], [aria-hidden=\"true\"]")
+  ) {
+    return;
+  }
 
-  elements.forEach((element) => {
-    if (
-      element.hasAttribute("data-typeshift-icon-font") ||
-      element.matches("svg, [role=\"img\"], [aria-hidden=\"true\"]")
-    ) {
-      return;
-    }
+  const computedFont = window.getComputedStyle(element).fontFamily;
+  if (looksLikeIconFont(computedFont)) {
+    element.setAttribute("data-typeshift-icon-font", "");
+    element.style.setProperty("--typeshift-original-font", computedFont);
+  }
+}
 
-    const computedFont = window.getComputedStyle(element).fontFamily;
-    if (looksLikeIconFont(computedFont)) {
-      element.setAttribute("data-typeshift-icon-font", "");
-      element.style.setProperty(
-        "--typeshift-original-font",
-        computedFont,
-      );
-    }
+function queueIconProtection(root = document) {
+  if (!root.querySelectorAll) {
+    return;
+  }
+
+  if (root.matches?.(ICON_CANDIDATE_SELECTOR)) {
+    iconProtectionPending.add(root);
+  }
+
+  root.querySelectorAll(ICON_CANDIDATE_SELECTOR).forEach((element) => {
+    iconProtectionPending.add(element);
+  });
+
+  if (iconProtectionFrame !== null) {
+    return;
+  }
+
+  iconProtectionFrame = requestAnimationFrame(() => {
+    iconProtectionFrame = null;
+
+    const pending = iconProtectionPending;
+    iconProtectionPending = new Set();
+
+    pending.forEach((element) => {
+      if (element.isConnected) {
+        protectIconElement(element);
+      }
+    });
   });
 }
 
 function startIconProtection() {
-  protectIconFonts();
+  queueIconProtection();
 
   if (iconProtectionObserver) {
     iconProtectionObserver.disconnect();
@@ -99,7 +130,7 @@ function startIconProtection() {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (node.nodeType === Node.ELEMENT_NODE) {
-          protectIconFonts(node);
+          queueIconProtection(node);
         }
       });
     });
@@ -117,6 +148,13 @@ function stopIconProtection() {
     iconProtectionObserver = null;
   }
 
+  if (iconProtectionFrame !== null) {
+    cancelAnimationFrame(iconProtectionFrame);
+    iconProtectionFrame = null;
+  }
+
+  iconProtectionPending.clear();
+
   document.querySelectorAll("[data-typeshift-icon-font]").forEach((element) => {
     element.style.removeProperty("--typeshift-original-font");
     element.removeAttribute("data-typeshift-icon-font");
@@ -126,6 +164,9 @@ function stopIconProtection() {
 function applyFontShift(fontFamily) {
   const styleId = "typeshift-custom-styles";
   let styleEl = document.getElementById(styleId);
+
+  // Capture known icon-font elements before TypeShift changes the cascade.
+  queueIconProtection();
 
   if (!styleEl) {
     styleEl = document.createElement("style");
@@ -167,7 +208,6 @@ function removeFontShift() {
   }
 }
 
-// Listen for interactions from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "checkIcons") {
     sendResponse({ hasIcons: detectIcons() });
@@ -184,7 +224,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Auto-apply font on page load based on storage rules
 chrome.storage.local.get(
   ["activeFont", "disabledDomains", "siteFonts"],
   (result) => {
