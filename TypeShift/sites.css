@@ -292,6 +292,10 @@ button:hover {
   font-size: 13px;
 }
 
+.empty-state[hidden] {
+  display: none;
+}
+
 .empty-state strong {
   color: inherit;
 }
