@@ -206,6 +206,32 @@ body[data-theme="dark"] .site-heading,
 body[data-theme="pitch-black"] .site-heading {
   color: #9ca3af;
 }
+.secondary-link {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  color: #475569;
+  font-weight: bold;
+  font-size: 13px;
+  text-align: center;
+  text-decoration: none;
+}
+.secondary-link:hover {
+  background: #cbd5e1;
+}
+body[data-theme="dark"] .secondary-link,
+body[data-theme="pitch-black"] .secondary-link {
+  background: #374151;
+  color: inherit;
+}
+body[data-theme="dark"] .secondary-link:hover,
+body[data-theme="pitch-black"] .secondary-link:hover {
+  background: #4b5563;
+}
 #status-message {
   display: none;
   margin-top: 4px;
