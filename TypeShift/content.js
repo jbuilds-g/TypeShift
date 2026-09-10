@@ -1,3 +1,5 @@
+const CONFIGURATION_VERSION = 1;
+
 const ICON_FONT_HINTS = [
   "icon",
   "symbol",
@@ -290,6 +292,71 @@ function removeFontShift() {
   document.getElementById("typeshift-google-font")?.remove();
 }
 
+// Resolve the versioned configuration model while remaining compatible with
+// the legacy activeFont/siteFonts keys used by earlier TypeShift versions.
+function getConfiguration(result, hostname) {
+  const global = {
+    ...(result.globalConfig || {}),
+  };
+
+  if (!global.fontFamily && result.activeFont) {
+    global.fontFamily = result.activeFont;
+  }
+
+  const sites = {
+    ...(result.siteConfigs || {}),
+  };
+
+  if (result.siteFonts && typeof result.siteFonts === "object") {
+    Object.entries(result.siteFonts).forEach(([domain, fontFamily]) => {
+      sites[domain] = {
+        ...(sites[domain] || {}),
+        fontFamily: sites[domain]?.fontFamily || fontFamily,
+      };
+    });
+  }
+
+  return {
+    version: result.configurationVersion || CONFIGURATION_VERSION,
+    global,
+    site: hostname ? sites[hostname] || {} : {},
+  };
+}
+
+function persistConfigurationModel(result) {
+  const update = {};
+  const globalConfig = {
+    ...(result.globalConfig || {}),
+  };
+  const siteConfigs = {
+    ...(result.siteConfigs || {}),
+  };
+
+  if (!globalConfig.fontFamily && result.activeFont) {
+    globalConfig.fontFamily = result.activeFont;
+    update.globalConfig = globalConfig;
+  }
+
+  if (
+    Object.keys(siteConfigs).length === 0 &&
+    result.siteFonts &&
+    typeof result.siteFonts === "object"
+  ) {
+    Object.entries(result.siteFonts).forEach(([domain, fontFamily]) => {
+      siteConfigs[domain] = { fontFamily };
+    });
+    update.siteConfigs = siteConfigs;
+  }
+
+  if (result.configurationVersion !== CONFIGURATION_VERSION) {
+    update.configurationVersion = CONFIGURATION_VERSION;
+  }
+
+  if (Object.keys(update).length) {
+    chrome.storage.local.set(update);
+  }
+}
+
 // Listen for interactions from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "checkIcons") {
@@ -309,17 +376,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Auto-apply font on page load based on storage rules
 chrome.storage.local.get(
-  ["activeFont", "disabledDomains", "siteFonts"],
+  [
+    "configurationVersion",
+    "globalConfig",
+    "siteConfigs",
+    "activeFont",
+    "disabledDomains",
+    "siteFonts",
+  ],
   (result) => {
-    const disabledDomains = result.disabledDomains || [];
-    const siteFonts = result.siteFonts || {};
-    const currentHostname = window.location.hostname;
+    persistConfigurationModel(result);
 
-    if (!disabledDomains.includes(currentHostname)) {
-      const fontToApply = siteFonts[currentHostname] || result.activeFont;
-      if (fontToApply) {
-        applyFontShift(fontToApply);
-      }
+    const disabledDomains = result.disabledDomains || [];
+    const configuration = getConfiguration(result, window.location.hostname);
+    const fontToApply = configuration.site.fontFamily || configuration.global.fontFamily;
+
+    if (!disabledDomains.includes(window.location.hostname) && fontToApply) {
+      applyFontShift(fontToApply);
     }
   },
 );
