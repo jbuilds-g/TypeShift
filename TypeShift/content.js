@@ -281,9 +281,14 @@ function resolveConfiguration(result, hostname) {
 
 function applyStoredConfiguration(force = false) {
   chrome.storage.local.get(
-    ["configurationVersion", "globalConfig", "siteConfigs", "activeFont", "disabledDomains", "siteFonts"],
+    ["configurationVersion", "globalConfig", "siteConfigs", "activeFont", "disabledDomains", "siteFonts", "enabled"],
     (result) => {
       const hostname = window.location.hostname;
+      if (result.enabled === false) {
+        if (force || appliedConfigurationKey !== "disabled") removeFontShift();
+        return;
+      }
+
       const disabled = (result.disabledDomains || []).includes(hostname);
       const configuration = resolveConfiguration(result, hostname);
       const configurationKey = disabled ? "disabled" : `enabled:${configuration.fontFamily || ""}`;
@@ -299,8 +304,16 @@ function applyStoredConfiguration(force = false) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "checkIcons") sendResponse({ hasIcons: detectIcons() });
   if (request.action === "applyFont") {
-    applyFontShift(request.fontFamily);
-    sendResponse({ success: true });
+    chrome.storage.local.get(["enabled"], (result) => {
+      if (result.enabled === false) {
+        removeFontShift();
+        sendResponse({ success: false, disabled: true });
+        return;
+      }
+      applyFontShift(request.fontFamily);
+      sendResponse({ success: true });
+    });
+    return true;
   }
   if (request.action === "removeFont") {
     removeFontShift();
@@ -311,7 +324,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local") return;
   const relevantKeys = [
-    "configurationVersion", "globalConfig", "siteConfigs", "activeFont", "disabledDomains", "siteFonts",
+    "configurationVersion", "globalConfig", "siteConfigs", "activeFont", "disabledDomains", "siteFonts", "enabled",
   ];
   if (relevantKeys.some((key) => changes[key])) applyStoredConfiguration();
 });
