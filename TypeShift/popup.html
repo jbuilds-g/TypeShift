@@ -33,32 +33,45 @@
       </button>
     </div>
 
-    <div class="tabs" role="tablist" aria-label="Configuration scope">
-      <button id="global-tab" class="tab active" type="button" role="tab" aria-selected="true">
-        Global
-      </button>
-      <button id="site-tab" class="tab" type="button" role="tab" aria-selected="false">
-        This Site
-      </button>
+    <div class="master-toggle-row">
+      <span class="master-toggle-label">Enable TypeShift</span>
+      <label class="switch">
+        <input id="enabled-toggle" type="checkbox" role="switch" checked />
+        <span class="switch-slider"></span>
+      </label>
+    </div>
+    <div id="disabled-message" class="disabled-message" hidden>
+      TypeShift is disabled. Your settings are preserved.
     </div>
 
-    <div id="site-heading" class="site-heading" hidden></div>
-
-    <div class="custom-dropdown" id="custom-dropdown">
-      <div class="dropdown-trigger" id="dropdown-trigger">Select Font</div>
-      <div class="dropdown-menu hidden" id="dropdown-menu">
-        <input type="text" id="font-search" placeholder="Search fonts..." />
-        <div class="font-options-list" id="font-options-list"></div>
+    <div id="configuration-controls">
+      <div class="tabs" role="tablist" aria-label="Configuration scope">
+        <button id="global-tab" class="tab active" type="button" role="tab" aria-selected="true">
+          Global
+        </button>
+        <button id="site-tab" class="tab" type="button" role="tab" aria-selected="false">
+          This Site
+        </button>
       </div>
+
+      <div id="site-heading" class="site-heading" hidden></div>
+
+      <div class="custom-dropdown" id="custom-dropdown">
+        <div class="dropdown-trigger" id="dropdown-trigger">Select Font</div>
+        <div class="dropdown-menu hidden" id="dropdown-menu">
+          <input type="text" id="font-search" placeholder="Search fonts..." />
+          <div class="font-options-list" id="font-options-list"></div>
+        </div>
+      </div>
+
+      <button id="toggle-disable-btn" style="display: none">
+        Disable for this website
+      </button>
+
+      <button id="reset-site-btn" class="secondary-btn" type="button" hidden>
+        Reset this site
+      </button>
     </div>
-
-    <button id="toggle-disable-btn" style="display: none">
-      Disable for this website
-    </button>
-
-    <button id="reset-site-btn" class="secondary-btn" type="button" hidden>
-      Reset this site
-    </button>
 
     <div class="secondary-links">
       <a class="secondary-link" href="sites.html" target="_blank">Manage Sites</a>

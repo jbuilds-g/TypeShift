@@ -351,7 +351,6 @@ function applyStoredConfiguration(force = false) {
       "activeFont",
       "disabledDomains",
       "siteFonts",
-      "enabled",
     ],
     (result) => {
       const hostname = window.location.hostname;
@@ -405,7 +404,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     "activeFont",
     "disabledDomains",
     "siteFonts",
-    "enabled",
   ];
   if (relevantKeys.some((key) => changes[key])) applyStoredConfiguration();
 });
