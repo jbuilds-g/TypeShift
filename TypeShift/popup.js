@@ -6,7 +6,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let siteConfigs = {};
   let globalConfig = {};
   let activeScope = "global";
+  let enabled = true;
 
+  const enabledToggle = document.getElementById("enabled-toggle");
+  const disabledMessage = document.getElementById("disabled-message");
+  const configurationControls = document.getElementById("configuration-controls");
   const toggleDisableBtn = document.getElementById("toggle-disable-btn");
   const resetSiteBtn = document.getElementById("reset-site-btn");
   const statusMessage = document.getElementById("status-message");
@@ -78,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
     selectedFontValue = font;
     dropdownTrigger.textContent = font || "Select Font";
     dropdownTrigger.style.fontFamily = font || "inherit";
-    if (shouldApply && font && !disabledDomains.includes(currentHostname)) {
+    if (shouldApply && font && !disabledDomains.includes(currentHostname) && enabled) {
       saveCurrentFont();
     }
   }
@@ -92,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveCurrentFont() {
-    if (!selectedFontValue) return;
+    if (!selectedFontValue || !enabled) return;
 
     if (activeScope === "site" && currentHostname) {
       siteConfigs[currentHostname] = {
@@ -170,6 +174,13 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleDisableBtn.classList.toggle("is-disabled", isDisabled);
   }
 
+  function updateEnabledUI() {
+    enabledToggle.checked = enabled;
+    configurationControls.hidden = !enabled;
+    disabledMessage.hidden = enabled;
+    dropdownMenu.classList.add("hidden");
+  }
+
   function updateTabs() {
     const isSite = activeScope === "site";
     globalTab.classList.toggle("active", !isSite);
@@ -186,6 +197,21 @@ document.addEventListener("DOMContentLoaded", () => {
     updateToggleUI();
     statusMessage.style.display = "none";
   }
+
+  function setEnabled(nextEnabled) {
+    enabled = nextEnabled;
+    chrome.storage.local.set({ enabled }, () => {
+      updateEnabledUI();
+      if (enabled) {
+        updateTabs();
+        showStatus("TypeShift enabled.");
+      } else {
+        showStatus("TypeShift disabled. Your settings are preserved.");
+      }
+    });
+  }
+
+  enabledToggle.addEventListener("change", () => setEnabled(enabledToggle.checked));
 
   globalTab.addEventListener("click", () => {
     activeScope = "global";
@@ -236,7 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   toggleDisableBtn.addEventListener("click", () => {
-    if (!currentHostname) return;
+    if (!currentHostname || !enabled) return;
     const isDisabled = disabledDomains.includes(currentHostname);
     disabledDomains = isDisabled
       ? disabledDomains.filter((domain) => domain !== currentHostname)
@@ -270,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setFontValue(selectedFontValue, false);
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (!tabs[0]?.id) return;
-          if (selectedFontValue) {
+          if (selectedFontValue && enabled && !disabledDomains.includes(currentHostname)) {
             chrome.tabs.sendMessage(tabs[0].id, {
               action: "applyFont",
               fontFamily: selectedFontValue,
@@ -291,8 +317,9 @@ document.addEventListener("DOMContentLoaded", () => {
     currentHostname = getHostname(tabs[0].url);
 
     chrome.storage.local.get(
-      ["configurationVersion", "globalConfig", "siteConfigs", "activeFont", "disabledDomains", "siteFonts"],
+      ["configurationVersion", "globalConfig", "siteConfigs", "activeFont", "disabledDomains", "siteFonts", "enabled"],
       (result) => {
+        enabled = result.enabled !== false;
         globalConfig = { ...(result.globalConfig || {}) };
         siteConfigs = { ...(result.siteConfigs || {}) };
 
@@ -314,10 +341,12 @@ document.addEventListener("DOMContentLoaded", () => {
             configurationVersion: CONFIGURATION_VERSION,
             globalConfig,
             siteConfigs,
+            enabled,
           });
         }
 
         disabledDomains = result.disabledDomains || [];
+        updateEnabledUI();
         updateTabs();
       },
     );
