@@ -292,69 +292,25 @@ function removeFontShift() {
   document.getElementById("typeshift-google-font")?.remove();
 }
 
-// Resolve the versioned configuration model while remaining compatible with
-// the legacy activeFont/siteFonts keys used by earlier TypeShift versions.
-function getConfiguration(result, hostname) {
-  const global = {
-    ...(result.globalConfig || {}),
-  };
-
-  if (!global.fontFamily && result.activeFont) {
-    global.fontFamily = result.activeFont;
+// Configuration foundation for the upcoming site-profile UI. The new schema
+// is intentionally opt-in so existing popup behavior remains authoritative
+// until the UI is migrated in a later phase.
+function resolveConfiguration(result, hostname) {
+  if (result.configurationVersion !== CONFIGURATION_VERSION) {
+    return {
+      fontFamily:
+        result.siteFonts?.[hostname] || result.activeFont || "",
+      source: result.siteFonts?.[hostname] ? "site" : "global",
+    };
   }
 
-  const sites = {
-    ...(result.siteConfigs || {}),
-  };
-
-  if (result.siteFonts && typeof result.siteFonts === "object") {
-    Object.entries(result.siteFonts).forEach(([domain, fontFamily]) => {
-      sites[domain] = {
-        ...(sites[domain] || {}),
-        fontFamily: sites[domain]?.fontFamily || fontFamily,
-      };
-    });
-  }
+  const globalFont = result.globalConfig?.fontFamily || result.activeFont || "";
+  const siteFont = result.siteConfigs?.[hostname]?.fontFamily || result.siteFonts?.[hostname] || "";
 
   return {
-    version: result.configurationVersion || CONFIGURATION_VERSION,
-    global,
-    site: hostname ? sites[hostname] || {} : {},
+    fontFamily: siteFont || globalFont,
+    source: siteFont ? "site" : "global",
   };
-}
-
-function persistConfigurationModel(result) {
-  const update = {};
-  const globalConfig = {
-    ...(result.globalConfig || {}),
-  };
-  const siteConfigs = {
-    ...(result.siteConfigs || {}),
-  };
-
-  if (!globalConfig.fontFamily && result.activeFont) {
-    globalConfig.fontFamily = result.activeFont;
-    update.globalConfig = globalConfig;
-  }
-
-  if (
-    Object.keys(siteConfigs).length === 0 &&
-    result.siteFonts &&
-    typeof result.siteFonts === "object"
-  ) {
-    Object.entries(result.siteFonts).forEach(([domain, fontFamily]) => {
-      siteConfigs[domain] = { fontFamily };
-    });
-    update.siteConfigs = siteConfigs;
-  }
-
-  if (result.configurationVersion !== CONFIGURATION_VERSION) {
-    update.configurationVersion = CONFIGURATION_VERSION;
-  }
-
-  if (Object.keys(update).length) {
-    chrome.storage.local.set(update);
-  }
 }
 
 // Listen for interactions from the popup
@@ -374,7 +330,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Auto-apply font on page load based on storage rules
+// Auto-apply font on page load based on storage rules.
 chrome.storage.local.get(
   [
     "configurationVersion",
@@ -385,14 +341,11 @@ chrome.storage.local.get(
     "siteFonts",
   ],
   (result) => {
-    persistConfigurationModel(result);
-
     const disabledDomains = result.disabledDomains || [];
-    const configuration = getConfiguration(result, window.location.hostname);
-    const fontToApply = configuration.site.fontFamily || configuration.global.fontFamily;
+    const configuration = resolveConfiguration(result, window.location.hostname);
 
-    if (!disabledDomains.includes(window.location.hostname) && fontToApply) {
-      applyFontShift(fontToApply);
+    if (!disabledDomains.includes(window.location.hostname) && configuration.fontFamily) {
+      applyFontShift(configuration.fontFamily);
     }
   },
 );
