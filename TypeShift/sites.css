@@ -94,13 +94,11 @@ label {
 }
 
 input,
-select,
 button {
   font: inherit;
 }
 
-input,
-select {
+input {
   width: 100%;
   padding: 9px 10px;
   border: 1px solid #cbd5e1;
@@ -217,6 +215,72 @@ button:hover {
   cursor: pointer;
 }
 
+.font-picker {
+  position: relative;
+  width: 100%;
+}
+
+.font-picker .dropdown-trigger {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+}
+
+.font-picker .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin-top: 4px;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.font-picker .dropdown-menu.hidden {
+  display: none;
+}
+
+.font-picker .dropdown-menu input {
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.font-options-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.category-header {
+  padding: 4px 8px;
+  color: #666;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.font-option {
+  padding: 6px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.font-option:hover,
+.font-option.highlighted {
+  background: #f1f5f9;
+}
+
 .empty-state {
   display: grid;
   gap: 4px;
@@ -269,13 +333,17 @@ body[data-theme="pitch-black"] .site-card {
 }
 
 body[data-theme="dark"] input,
-body[data-theme="dark"] select,
 body[data-theme="dark"] .site-actions button,
 body[data-theme="dark"] .cancel-btn,
+body[data-theme="dark"] .font-picker .dropdown-trigger,
+body[data-theme="dark"] .font-picker .dropdown-menu,
+body[data-theme="dark"] .font-picker .dropdown-menu input,
 body[data-theme="pitch-black"] input,
-body[data-theme="pitch-black"] select,
 body[data-theme="pitch-black"] .site-actions button,
-body[data-theme="pitch-black"] .cancel-btn {
+body[data-theme="pitch-black"] .cancel-btn,
+body[data-theme="pitch-black"] .font-picker .dropdown-trigger,
+body[data-theme="pitch-black"] .font-picker .dropdown-menu,
+body[data-theme="pitch-black"] .font-picker .dropdown-menu input {
   background: #1f2937;
   border-color: #4b5563;
   color: inherit;
