@@ -108,32 +108,6 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  function createFontSelect(selectedFont) {
-    const select = document.createElement("select");
-    select.setAttribute("aria-label", "Site font");
-
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "Select font";
-    select.appendChild(placeholder);
-
-    for (const [category, fonts] of Object.entries(typeShiftFonts)) {
-      const group = document.createElement("optgroup");
-      group.label = category;
-      fonts.forEach((font) => {
-        const option = document.createElement("option");
-        option.value = font;
-        option.textContent = font;
-        option.style.fontFamily = font;
-        if (font === selectedFont) option.selected = true;
-        group.appendChild(option);
-      });
-      select.appendChild(group);
-    }
-
-    return select;
-  }
-
   function renderSites() {
     sitesList.replaceChildren();
     const domains = Object.keys(siteConfigs).sort((a, b) => a.localeCompare(b));
@@ -187,8 +161,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const field = document.createElement("div");
     const label = document.createElement("label");
     label.textContent = "Font override";
-    const select = createFontSelect(siteConfigs[domain]?.fontFamily || "");
-    field.append(label, select);
+    const picker = createFontPicker({
+      selectedFont: siteConfigs[domain]?.fontFamily || "",
+      onChange: () => {},
+    });
+    field.append(label, picker);
 
     const actions = document.createElement("div");
     actions.className = "editor-actions";
@@ -204,8 +181,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     cancelBtn.addEventListener("click", () => editor.remove());
     saveBtn.addEventListener("click", () => {
-      const fontFamily = select.value;
-      if (!fontFamily) {
+      const fontFamily = picker.querySelector(".dropdown-trigger").textContent;
+      if (!fontFamily || fontFamily === "Select Font") {
         delete siteConfigs[domain].fontFamily;
       } else {
         siteConfigs[domain] = { ...(siteConfigs[domain] || {}), fontFamily };
@@ -221,7 +198,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     editor.append(field, actions);
     card.appendChild(editor);
-    select.focus();
   }
 
   function deleteSite(domain) {
