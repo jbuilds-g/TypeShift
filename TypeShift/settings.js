@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const backupFile = document.getElementById("backup-file");
   const backupPreview = document.getElementById("backup-preview");
   const previewVersion = document.getElementById("preview-version");
+  const previewEnabled = document.getElementById("preview-enabled");
   const previewGlobal = document.getElementById("preview-global");
   const previewSites = document.getElementById("preview-sites");
   const previewTheme = document.getElementById("preview-theme");
@@ -94,12 +95,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if ("fontFamily" in backup.global && typeof backup.global.fontFamily !== "string") {
       return "Invalid global font configuration.";
     }
+    if ("enabled" in backup && typeof backup.enabled !== "boolean") {
+      return "Invalid TypeShift enabled state.";
+    }
     return null;
   }
 
   function buildBackup(result) {
-    const globalConfig = isPlainObject(result.globalConfig) ? result.globalConfig : {};
-    const siteConfigs = isPlainObject(result.siteConfigs) ? result.siteConfigs : {};
+    const globalConfig = isPlainObject(result.globalConfig) ? { ...result.globalConfig } : {};
+    const siteConfigs = isPlainObject(result.siteConfigs)
+      ? Object.fromEntries(Object.entries(result.siteConfigs).map(([domain, config]) => [domain, { ...config }]))
+      : {};
 
     if (!globalConfig.fontFamily && result.activeFont) {
       globalConfig.fontFamily = result.activeFont;
@@ -116,6 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return {
       version: CONFIGURATION_VERSION,
+      enabled: result.enabled !== false,
       global: globalConfig,
       sites: siteConfigs,
       disabledDomains: Array.isArray(result.disabledDomains) ? result.disabledDomains : [],
@@ -125,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadCurrentBackup(callback) {
     chrome.storage.local.get(
-      ["globalConfig", "siteConfigs", "activeFont", "siteFonts", "disabledDomains", "popupTheme"],
+      ["globalConfig", "siteConfigs", "activeFont", "siteFonts", "disabledDomains", "popupTheme", "enabled"],
       (result) => callback(buildBackup(result)),
     );
   }
@@ -146,6 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function normalizeImportedBackup(backup) {
     return {
+      enabled: backup.enabled !== false,
       globalConfig: { ...backup.global },
       siteConfigs: Object.fromEntries(
         Object.entries(backup.sites).map(([domain, config]) => [domain, { ...config }]),
@@ -169,6 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
       chrome.storage.local.set(
         {
           configurationVersion: CONFIGURATION_VERSION,
+          enabled: config.enabled,
           globalConfig: config.globalConfig,
           siteConfigs: config.siteConfigs,
           activeFont: config.globalConfig.fontFamily || "",
@@ -184,11 +193,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function mergeBackup(imported) {
     return new Promise((resolve) => {
       chrome.storage.local.get(
-        ["globalConfig", "siteConfigs", "activeFont", "siteFonts", "disabledDomains", "popupTheme"],
+        ["globalConfig", "siteConfigs", "activeFont", "siteFonts", "disabledDomains", "popupTheme", "enabled"],
         async (result) => {
           const current = buildBackup(result);
           const merged = {
             version: CONFIGURATION_VERSION,
+            enabled: imported.enabled,
             global: { ...current.global, ...imported.global },
             sites: { ...current.sites },
             disabledDomains: [...new Set([...current.disabledDomains, ...imported.disabledDomains])],
@@ -215,6 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function showPreview(backup) {
     pendingBackup = backup;
     previewVersion.textContent = String(backup.version);
+    previewEnabled.textContent = backup.enabled === false ? "Disabled" : "Enabled";
     previewGlobal.textContent = backup.global.fontFamily ? backup.global.fontFamily : "Default";
     previewSites.textContent = `${Object.keys(backup.sites).length} ${Object.keys(backup.sites).length === 1 ? "site" : "sites"}`;
     previewTheme.textContent = themeLabels[backup.theme];
