@@ -258,6 +258,89 @@ async function waitForFont(fontFamily) {
   }
 }
 
+function getVerificationElement() {
+  const walker = document.createTreeWalker(
+    document.body || document.documentElement,
+    NodeFilter.SHOW_ELEMENT,
+  );
+
+  let element = walker.currentNode;
+  while (element) {
+    if (
+      element instanceof Element &&
+      element !== document.body &&
+      element !== document.documentElement &&
+      element.textContent?.trim() &&
+      !element.matches(
+        "svg, [role=\"img\"], [aria-hidden=\"true\"], [data-typeshift-icon-font], " +
+          ICON_CLASS_SELECTORS.join(", "),
+      )
+    ) {
+      const rect = element.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) return element;
+    }
+
+    element = walker.nextNode();
+  }
+
+  return null;
+}
+
+function firstFontFamily(fontFamily) {
+  return fontFamily
+    .split(",")[0]
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .toLowerCase();
+}
+
+function isFontApplied(fontFamily) {
+  const element = getVerificationElement();
+  if (!element) return true;
+
+  const expectedFont = firstFontFamily(fontFamily);
+  const computedFont = firstFontFamily(window.getComputedStyle(element).fontFamily);
+  if (computedFont !== expectedFont) return false;
+
+  if (document.fonts) {
+    try {
+      return document.fonts.check(`16px "${fontFamily}"`);
+    } catch {
+      return true;
+    }
+  }
+
+  return true;
+}
+
+function getRecoveryKey(fontFamily) {
+  return `typeshift-recovery:${fontFamily}`;
+}
+
+async function verifyFontApplication(fontFamily, currentToken) {
+  const checks = [0, 250, 750];
+
+  for (const delay of checks) {
+    if (currentToken !== fontLoadToken) return true;
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+    if (isFontApplied(fontFamily)) {
+      sessionStorage.removeItem(getRecoveryKey(fontFamily));
+      return true;
+    }
+  }
+
+  if (currentToken !== fontLoadToken) return true;
+
+  const recoveryKey = getRecoveryKey(fontFamily);
+  if (sessionStorage.getItem(recoveryKey) === "1") {
+    return false;
+  }
+
+  sessionStorage.setItem(recoveryKey, "1");
+  window.location.reload();
+  return false;
+}
+
 async function applyFontShift(fontFamily) {
   const currentToken = ++fontLoadToken;
 
@@ -275,6 +358,7 @@ async function applyFontShift(fontFamily) {
     // Re-check after the selected web font has finished loading because its
     // @font-face rules can change the computed font of existing elements.
     queueIconProtection();
+    await verifyFontApplication(fontFamily, currentToken);
   } catch (error) {
     console.error("TypeShift: unable to apply font", error);
   }
@@ -292,9 +376,6 @@ function removeFontShift() {
   document.getElementById("typeshift-google-font")?.remove();
 }
 
-// Configuration foundation for the upcoming site-profile UI. The new schema
-// is intentionally opt-in so existing popup behavior remains authoritative
-// until the UI is migrated in a later phase.
 function resolveConfiguration(result, hostname) {
   if (result.configurationVersion !== CONFIGURATION_VERSION) {
     return {
@@ -313,7 +394,6 @@ function resolveConfiguration(result, hostname) {
   };
 }
 
-// Listen for interactions from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "checkIcons") {
     sendResponse({ hasIcons: detectIcons() });
@@ -330,7 +410,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Auto-apply font on page load based on storage rules.
 chrome.storage.local.get(
   [
     "configurationVersion",
