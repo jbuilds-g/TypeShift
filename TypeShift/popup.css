@@ -30,9 +30,84 @@ h2 {
   align-items: center;
   justify-content: center;
 }
+.master-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+}
+.master-toggle-label {
+  font-size: 13px;
+  font-weight: 700;
+}
+.switch {
+  position: relative;
+  display: inline-flex;
+  width: 42px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.switch-slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #cbd5e1;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.switch-slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+.switch input:checked + .switch-slider {
+  background: #475569;
+}
+.switch input:checked + .switch-slider::before {
+  transform: translateX(18px);
+}
+.switch input:focus-visible + .switch-slider {
+  outline: 2px solid #64748b;
+  outline-offset: 2px;
+}
+.disabled-message {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
 body[data-theme="dark"] {
   background: #1f2937;
   color: #f3f4f6;
+}
+body[data-theme="dark"] .master-toggle-row {
+  background: #374151;
+  border-color: #4b5563;
+}
+body[data-theme="dark"] .disabled-message {
+  background: #374151;
+  color: #9ca3af;
 }
 body[data-theme="dark"] .dropdown-trigger,
 body[data-theme="dark"] .dropdown-menu,
@@ -49,6 +124,14 @@ body[data-theme="dark"] .tab.active {
 body[data-theme="pitch-black"] {
   background: #000000;
   color: #ffffff;
+}
+body[data-theme="pitch-black"] .master-toggle-row {
+  background: #121212;
+  border-color: #27272a;
+}
+body[data-theme="pitch-black"] .disabled-message {
+  background: #121212;
+  color: #a1a1aa;
 }
 body[data-theme="pitch-black"] .dropdown-trigger,
 body[data-theme="pitch-black"] .dropdown-menu,
@@ -205,6 +288,10 @@ body[data-theme="pitch-black"] #toggle-disable-btn:hover {
 body[data-theme="dark"] .site-heading,
 body[data-theme="pitch-black"] .site-heading {
   color: #9ca3af;
+}
+.secondary-links {
+  display: grid;
+  gap: 0;
 }
 .secondary-link {
   display: block;
