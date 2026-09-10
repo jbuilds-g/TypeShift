@@ -33,10 +33,16 @@
       </button>
     </div>
 
-    <div id="icon-warning">
-      <strong>Notice:</strong> This website uses custom icon fonts. TypeShift's
-      safe-mode is active.
+    <div class="tabs" role="tablist" aria-label="Configuration scope">
+      <button id="global-tab" class="tab active" type="button" role="tab" aria-selected="true">
+        Global
+      </button>
+      <button id="site-tab" class="tab" type="button" role="tab" aria-selected="false">
+        This Site
+      </button>
     </div>
+
+    <div id="site-heading" class="site-heading" hidden></div>
 
     <div class="custom-dropdown" id="custom-dropdown">
       <div class="dropdown-trigger" id="dropdown-trigger">Select Font</div>
@@ -46,19 +52,12 @@
       </div>
     </div>
 
-    <div id="scope-options">
-      <label>
-        <input type="radio" name="font-scope" value="global" checked />
-        Apply for all websites
-      </label>
-      <label>
-        <input type="radio" name="font-scope" value="site" />
-        Apply only for this website
-      </label>
-    </div>
-
     <button id="toggle-disable-btn" style="display: none">
       Disable for this website
+    </button>
+
+    <button id="reset-site-btn" class="secondary-btn" type="button" hidden>
+      Reset this site
     </button>
 
     <div id="status-message"></div>
