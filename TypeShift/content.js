@@ -232,10 +232,6 @@ function installFontStyles(fontFamily) {
       --typeshift-global-font: "${fontFamily}", sans-serif;
     }
 
-    /*
-     * Apply the selected font broadly, while excluding common icon hosts.
-     * Icon fonts detected by their actual computed font are restored below.
-     */
     *:not(svg):not([role="img"]):not([aria-hidden="true"]):not([class*="icon"]):not([class*="Icon"]):not([class*="fa-"]):not([class*="fas-"]):not([class*="fab-"]):not([class*="far-"]):not([class*="mdi-"]):not([class*="bi-"]):not([class*="ri-"]):not([class*="ti-"]):not([class*="glyphicon-"]):not([class*="codicon-"]):not([class*="octicon-"]):not([class*="lucide-"]):not([class*="ph-"]):not([class*="feather-"]):not(.material-icons):not(.material-symbols-outlined):not(.material-symbols-rounded):not(.material-symbols-sharp):not(i[class]):not([data-typeshift-icon-font]) {
       font-family: var(--typeshift-global-font) !important;
     }
@@ -345,18 +341,13 @@ async function applyFontShift(fontFamily) {
   const currentToken = ++fontLoadToken;
 
   try {
-    // Apply the CSS immediately. Font loading must never block the visual change.
     installFontStyles(fontFamily);
     startIconProtection();
-
-    // Load the web font in parallel. Local/system fonts work without this request.
     loadGoogleFontStylesheet(fontFamily);
     await waitForFont(fontFamily);
 
     if (currentToken !== fontLoadToken) return;
 
-    // Re-check after the selected web font has finished loading because its
-    // @font-face rules can change the computed font of existing elements.
     queueIconProtection();
     await verifyFontApplication(fontFamily, currentToken);
   } catch (error) {
@@ -394,6 +385,31 @@ function resolveConfiguration(result, hostname) {
   };
 }
 
+function applyStoredConfiguration() {
+  chrome.storage.local.get(
+    [
+      "configurationVersion",
+      "globalConfig",
+      "siteConfigs",
+      "activeFont",
+      "disabledDomains",
+      "siteFonts",
+    ],
+    (result) => {
+      const disabledDomains = result.disabledDomains || [];
+      const configuration = resolveConfiguration(result, window.location.hostname);
+
+      if (disabledDomains.includes(window.location.hostname)) {
+        removeFontShift();
+      } else if (configuration.fontFamily) {
+        applyFontShift(configuration.fontFamily);
+      } else {
+        removeFontShift();
+      }
+    },
+  );
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "checkIcons") {
     sendResponse({ hasIcons: detectIcons() });
@@ -410,21 +426,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-chrome.storage.local.get(
-  [
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local") return;
+
+  const relevantKeys = [
     "configurationVersion",
     "globalConfig",
     "siteConfigs",
     "activeFont",
     "disabledDomains",
     "siteFonts",
-  ],
-  (result) => {
-    const disabledDomains = result.disabledDomains || [];
-    const configuration = resolveConfiguration(result, window.location.hostname);
+  ];
 
-    if (!disabledDomains.includes(window.location.hostname) && configuration.fontFamily) {
-      applyFontShift(configuration.fontFamily);
-    }
-  },
-);
+  if (relevantKeys.some((key) => changes[key])) {
+    applyStoredConfiguration();
+  }
+});
+
+applyStoredConfiguration();
