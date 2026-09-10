@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const CONFIGURATION_VERSION = 1;
   let selectedFontValue = "";
   const toggleDisableBtn = document.getElementById("toggle-disable-btn");
   const warningBox = document.getElementById("icon-warning");
@@ -93,54 +94,74 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelector('input[name="font-scope"]:checked')?.value ||
       "global";
 
-    chrome.storage.local.get(["siteFonts"], (result) => {
-      const siteFonts = result.siteFonts || {};
+    chrome.storage.local.get(
+      ["configurationVersion", "globalConfig", "siteConfigs", "activeFont", "siteFonts"],
+      (result) => {
+        const globalConfig = { ...(result.globalConfig || {}) };
+        const siteConfigs = { ...(result.siteConfigs || {}) };
+        const siteFonts = { ...(result.siteFonts || {}) };
 
-      if (scope === "site" && currentHostname) {
-        siteFonts[currentHostname] = selectedFontValue;
-      } else if (scope === "global" && currentHostname) {
-        delete siteFonts[currentHostname];
-      }
+        if (scope === "site" && currentHostname) {
+          siteConfigs[currentHostname] = {
+            ...(siteConfigs[currentHostname] || {}),
+            fontFamily: selectedFontValue,
+          };
+          siteFonts[currentHostname] = selectedFontValue;
+        } else if (scope === "global") {
+          globalConfig.fontFamily = selectedFontValue;
 
-      const storageUpdate = { siteFonts };
-      if (scope === "global") {
-        storageUpdate.activeFont = selectedFontValue;
-      }
+          if (currentHostname) {
+            delete siteConfigs[currentHostname];
+            delete siteFonts[currentHostname];
+          }
+        }
 
-      chrome.storage.local.set(storageUpdate, () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          if (!tabs[0]) return;
-          chrome.tabs.sendMessage(
-            tabs[0].id,
-            {
-              action: "applyFont",
-              fontFamily: selectedFontValue,
-            },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                showStatus("Refreshing page to apply font...");
-                const tabId = tabs[0].id;
-                const onUpdated = (updatedTabId, changeInfo) => {
-                  if (
-                    updatedTabId === tabId &&
-                    changeInfo.status === "complete"
-                  ) {
-                    showStatus(`Success! Active font: ${selectedFontValue}`);
-                    chrome.tabs.onUpdated.removeListener(onUpdated);
-                  }
-                };
-                chrome.tabs.onUpdated.addListener(onUpdated);
-                chrome.tabs.reload(tabId);
-                return;
-              }
-              if (response && response.success) {
-                showStatus(`Success! Active font: ${selectedFontValue}`);
-              }
-            },
-          );
+        const storageUpdate = {
+          configurationVersion: CONFIGURATION_VERSION,
+          globalConfig,
+          siteConfigs,
+          siteFonts,
+        };
+
+        if (scope === "global") {
+          storageUpdate.activeFont = selectedFontValue;
+        }
+
+        chrome.storage.local.set(storageUpdate, () => {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (!tabs[0]) return;
+            chrome.tabs.sendMessage(
+              tabs[0].id,
+              {
+                action: "applyFont",
+                fontFamily: selectedFontValue,
+              },
+              (response) => {
+                if (chrome.runtime.lastError) {
+                  showStatus("Refreshing page to apply font...");
+                  const tabId = tabs[0].id;
+                  const onUpdated = (updatedTabId, changeInfo) => {
+                    if (
+                      updatedTabId === tabId &&
+                      changeInfo.status === "complete"
+                    ) {
+                      showStatus(`Success! Active font: ${selectedFontValue}`);
+                      chrome.tabs.onUpdated.removeListener(onUpdated);
+                    }
+                  };
+                  chrome.tabs.onUpdated.addListener(onUpdated);
+                  chrome.tabs.reload(tabId);
+                  return;
+                }
+                if (response && response.success) {
+                  showStatus(`Success! Active font: ${selectedFontValue}`);
+                }
+              },
+            );
+          });
         });
-      });
-    });
+      },
+    );
   }
 
   function populateFonts(filterText = "") {
@@ -256,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Load storage state
     chrome.storage.local.get(
-      ["activeFont", "disabledDomains", "siteFonts"],
+      ["configurationVersion", "globalConfig", "siteConfigs", "activeFont", "disabledDomains", "siteFonts"],
       (result) => {
         const siteFonts = result.siteFonts || {};
         const globalRadio = document.querySelector(
@@ -266,14 +287,38 @@ document.addEventListener("DOMContentLoaded", () => {
           'input[name="font-scope"][value="site"]',
         );
 
-        if (currentHostname && siteFonts[currentHostname]) {
-          setFontValue(siteFonts[currentHostname], false);
+        let globalFont = result.globalConfig?.fontFamily || result.activeFont || "";
+        let siteFont = currentHostname
+          ? result.siteConfigs?.[currentHostname]?.fontFamily || siteFonts[currentHostname] || ""
+          : "";
+
+        // Migrate existing legacy storage only when the new schema has not
+        // been established yet. This preserves existing user settings.
+        if (result.configurationVersion !== CONFIGURATION_VERSION) {
+          const migratedSiteConfigs = {};
+          Object.entries(siteFonts).forEach(([domain, fontFamily]) => {
+            migratedSiteConfigs[domain] = { fontFamily };
+          });
+
+          const migratedGlobalConfig = globalFont
+            ? { fontFamily: globalFont }
+            : {};
+
+          chrome.storage.local.set({
+            configurationVersion: CONFIGURATION_VERSION,
+            globalConfig: migratedGlobalConfig,
+            siteConfigs: migratedSiteConfigs,
+          });
+        }
+
+        if (siteFont) {
+          setFontValue(siteFont, false);
           if (siteRadio) siteRadio.checked = true;
-          showStatus(`Site font: ${siteFonts[currentHostname]}`);
-        } else if (result.activeFont) {
-          setFontValue(result.activeFont, false);
+          showStatus(`Site font: ${siteFont}`);
+        } else if (globalFont) {
+          setFontValue(globalFont, false);
           if (globalRadio) globalRadio.checked = true;
-          showStatus(`Global font: ${result.activeFont}`);
+          showStatus(`Global font: ${globalFont}`);
         }
 
         disabledDomains = result.disabledDomains || [];
