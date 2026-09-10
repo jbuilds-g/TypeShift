@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TypeShift — Settings</title>
+    <link rel="stylesheet" href="settings.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <div>
+          <h1>Settings</h1>
+          <p>Manage your TypeShift configuration and backups.</p>
+        </div>
+        <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle theme">
+          <svg id="theme-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+        </button>
+      </header>
+
+      <nav class="page-links" aria-label="TypeShift pages">
+        <a href="sites.html">Sites</a>
+      </nav>
+
+      <section class="section" aria-labelledby="backup-heading">
+        <h2 id="backup-heading">Backup &amp; Restore</h2>
+        <p class="section-description">
+          Save a copy of your global settings, theme, and custom site profiles, or restore them later.
+        </p>
+
+        <div class="action-row">
+          <button id="export-btn" class="primary-btn" type="button">Export Backup</button>
+        </div>
+
+        <div class="restore-block">
+          <label for="backup-file">Restore Backup</label>
+          <p class="hint">Choose a TypeShift backup file to review before restoring it.</p>
+          <input id="backup-file" type="file" accept="application/json,.json" />
+        </div>
+
+        <div id="backup-preview" class="backup-preview" hidden>
+          <div class="preview-heading">Backup found</div>
+          <dl>
+            <div>
+              <dt>Version</dt>
+              <dd id="preview-version"></dd>
+            </div>
+            <div>
+              <dt>TypeShift</dt>
+              <dd id="preview-enabled"></dd>
+            </div>
+            <div>
+              <dt>Global configuration</dt>
+              <dd id="preview-global"></dd>
+            </div>
+            <div>
+              <dt>Custom sites</dt>
+              <dd id="preview-sites"></dd>
+            </div>
+            <div>
+              <dt>Theme</dt>
+              <dd id="preview-theme"></dd>
+            </div>
+          </dl>
+          <div class="restore-actions">
+            <button id="replace-btn" class="primary-btn" type="button">Replace Existing</button>
+            <button id="merge-btn" class="secondary-btn" type="button">Merge</button>
+            <button id="cancel-restore-btn" class="secondary-btn" type="button">Cancel</button>
+          </div>
+        </div>
+      </section>
+
+      <div id="status-message" role="status" aria-live="polite"></div>
+
+      <footer class="modal-footer">
+        <div class="footer-row footer-row-primary">
+          <span class="footer-brand">TypeShift</span>
+          <a
+            href="https://github.com/jbuilds-g/TypeShift"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer-version"
+            title="View Source on GitHub"
+            data-version
+          ></a>
+        </div>
+        <div class="footer-row footer-row-secondary">
+          <span class="footer-copy">
+            © 2026 •
+            <a
+              href="https://github.com/jbuilds-g/TypeShift/blob/main/LICENSE"
+              target="_blank"
+              rel="noopener noreferrer"
+            >MIT</a>
+          </span>
+          <a
+            href="https://github.com/jbuilds-g/TypeShift/blob/main/PRIVACY.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="footer-link"
+          >Privacy Policy</a>
+          <span class="footer-credit">
+            Made with ♥️ •
+            <a
+              href="https://github.com/jbuilds-g"
+              target="_blank"
+              rel="noopener noreferrer"
+            >jbuilds-g</a>
+          </span>
+        </div>
+      </footer>
+    </main>
+
+    <script src="settings.js"></script>
+  </body>
+</html>

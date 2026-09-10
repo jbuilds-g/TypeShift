@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TypeShift — Sites</title>
+    <link rel="stylesheet" href="sites.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <div>
+          <h1>Sites</h1>
+          <p>Manage websites with custom TypeShift settings.</p>
+        </div>
+        <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle theme">
+          <svg id="theme-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+        </button>
+      </header>
+
+      <nav class="page-links" aria-label="TypeShift pages">
+        <a href="settings.html">Settings</a>
+      </nav>
+
+      <section class="add-section" aria-labelledby="add-site-heading">
+        <h2 id="add-site-heading">Add site</h2>
+        <form id="add-site-form" class="add-form">
+          <label for="domain-input">Domain</label>
+          <div class="add-row">
+            <input id="domain-input" name="domain" type="text" placeholder="example.com" autocomplete="off" required />
+            <button type="submit">Add</button>
+          </div>
+          <p class="hint">Enter a hostname or a full website URL.</p>
+        </form>
+      </section>
+
+      <section aria-labelledby="sites-heading">
+        <div class="section-heading">
+          <h2 id="sites-heading">Custom sites</h2>
+          <span id="site-count" class="site-count"></span>
+        </div>
+        <div id="sites-list" class="sites-list"></div>
+        <div id="empty-state" class="empty-state" hidden>
+          <strong>No custom sites</strong>
+          <span>Sites configured from the “This Site” tab will appear here.</span>
+        </div>
+      </section>
+
+      <div id="status-message" role="status" aria-live="polite"></div>
+    </main>
+
+    <script src="fonts.js"></script>
+    <script src="font-picker.js"></script>
+    <script src="sites.js"></script>
+  </body>
+</html>
