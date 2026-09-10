@@ -5,7 +5,8 @@ function createFontPicker({ selectedFont = "", onChange }) {
   const trigger = document.createElement("button");
   trigger.type = "button";
   trigger.className = "dropdown-trigger";
-  trigger.textContent = selectedFont || "Select Font";
+  trigger.textContent = selectedFont || "Use global font";
+  trigger.dataset.value = selectedFont;
   trigger.style.fontFamily = selectedFont || "inherit";
   trigger.setAttribute("aria-haspopup", "listbox");
 
@@ -22,6 +23,14 @@ function createFontPicker({ selectedFont = "", onChange }) {
 
   let highlightedIndex = -1;
 
+  function selectValue(font, label = font) {
+    trigger.textContent = label;
+    trigger.dataset.value = font;
+    trigger.style.fontFamily = font || "inherit";
+    menu.classList.add("hidden");
+    onChange?.(font);
+  }
+
   function updateHighlight(options) {
     options.forEach((option, index) => {
       option.classList.toggle("highlighted", index === highlightedIndex);
@@ -33,6 +42,15 @@ function createFontPicker({ selectedFont = "", onChange }) {
     list.replaceChildren();
     highlightedIndex = -1;
     const query = filterText.toLowerCase().trim();
+
+    if (!query) {
+      const resetOption = document.createElement("div");
+      resetOption.className = "font-option picker-reset-option";
+      resetOption.textContent = "Use global font";
+      resetOption.setAttribute("role", "option");
+      resetOption.addEventListener("click", () => selectValue("", "Use global font"));
+      list.appendChild(resetOption);
+    }
 
     for (const [category, fonts] of Object.entries(typeShiftFonts)) {
       const matchingFonts = fonts.filter((font) => font.toLowerCase().includes(query));
@@ -49,12 +67,7 @@ function createFontPicker({ selectedFont = "", onChange }) {
         option.textContent = font;
         option.style.fontFamily = font;
         option.setAttribute("role", "option");
-        option.addEventListener("click", () => {
-          trigger.textContent = font;
-          trigger.style.fontFamily = font;
-          menu.classList.add("hidden");
-          onChange?.(font);
-        });
+        option.addEventListener("click", () => selectValue(font));
         list.appendChild(option);
       });
     }
