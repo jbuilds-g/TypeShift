@@ -251,6 +251,16 @@ button {
     background 0.2s,
     opacity 0.2s;
 }
+.site-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.site-actions button {
+  margin-bottom: 0;
+  min-width: 0;
+}
 .secondary-btn {
   background: #e2e8f0;
   color: #475569;
@@ -291,14 +301,15 @@ body[data-theme="pitch-black"] .site-heading {
 }
 .secondary-links {
   display: grid;
-  gap: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 .secondary-link {
   display: block;
   width: 100%;
   box-sizing: border-box;
-  padding: 10px;
-  margin-bottom: 8px;
+  padding: 8px 6px;
+  margin-bottom: 0;
   border-radius: 4px;
   background: #e2e8f0;
   color: #475569;
@@ -321,7 +332,7 @@ body[data-theme="pitch-black"] .secondary-link:hover {
 }
 #status-message {
   display: none;
-  margin-top: 4px;
+  margin-top: 12px;
   padding: 10px;
   border-radius: 4px;
   font-size: 13px;
