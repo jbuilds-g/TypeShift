@@ -64,7 +64,25 @@
         </div>
       </div>
 
-      <div class="typography-controls"><div class="control-row"><div class="control-label"><span>Font Size</span><output id="font-size-value">100%</output></div><input id="font-size-control" class="range-control" type="range" min="80" max="140" step="5" value="100" aria-label="Font size" title="Adjust font size" /></div><div class="control-row"><div class="control-label"><span>Line Height</span><output id="line-height-value">100%</output></div><input id="line-height-control" class="range-control" type="range" min="80" max="140" step="5" value="100" aria-label="Line height" title="Adjust line height" /></div></div><div class="site-actions">
+      <div class="typography-controls">
+        <div class="control-row">
+          <div class="control-label">
+            <span>Font Size</span>
+            <output id="font-size-value">100%</output>
+          </div>
+          <input id="font-size-control" class="range-control" type="range" min="80" max="140" step="5" value="100" aria-label="Font size" title="Adjust font size" />
+        </div>
+        <div class="control-row">
+          <div class="control-label">
+            <span>Line Height</span>
+            <output id="line-height-value">100%</output>
+          </div>
+          <input id="line-height-control" class="range-control" type="range" min="80" max="140" step="5" value="100" aria-label="Line height" title="Adjust line height" />
+        </div>
+        <button id="reset-typography-btn" class="secondary-btn typography-reset-btn" type="button" hidden title="Reset this site's font size and line height to the global settings">
+          Reset Typography
+        </button>
+      </div><div class="site-actions">
         <button id="toggle-disable-btn" style="display: none" title="Temporarily disable TypeShift on this website">
           Disable for this website
         </button>
