@@ -418,7 +418,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setFontValue(selectedFontValue, false);
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (!tabs[0]?.id) return;
-          if (selectedFontValue && enabled && !disabledDomains.includes(currentHostname)) {
+          if (enabled && !disabledDomains.includes(currentHostname)) {
             chrome.tabs.sendMessage(tabs[0].id, {
               action: "applyConfiguration",
               ...getEffectiveConfiguration(),
