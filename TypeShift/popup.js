@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!tabs[0]?.id) return;
       chrome.tabs.sendMessage(
         tabs[0].id,
-        { action: "applyFont", fontFamily: selectedFontValue },
+        { action: "applyConfiguration", ...getEffectiveConfiguration() },
         () => {
           if (chrome.runtime.lastError) {
             console.warn("TypeShift: unable to message the current page", chrome.runtime.lastError.message);
@@ -348,8 +348,8 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!tabs[0]?.id) return;
           if (selectedFontValue && enabled && !disabledDomains.includes(currentHostname)) {
             chrome.tabs.sendMessage(tabs[0].id, {
-              action: "applyFont",
-              fontFamily: selectedFontValue,
+              action: "applyConfiguration",
+              ...getEffectiveConfiguration(),
             });
           } else {
             chrome.tabs.sendMessage(tabs[0].id, { action: "removeFont" });
