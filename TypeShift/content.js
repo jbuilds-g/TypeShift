@@ -268,29 +268,43 @@ async function verifyFontApplication(fontFamily, currentToken) {
   return false;
 }
 
-async function applyFontShift(fontFamily, size = 100, lineHeight = 100) {
-  const configurationKey = `enabled:${fontFamily}:${size}:${lineHeight}`;
+async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100) {
+  const normalizedFont = typeof fontFamily === "string" ? fontFamily.trim() : "";
+  const normalizedSize = Number.isFinite(Number(size)) ? Number(size) : 100;
+  const normalizedLineHeight = Number.isFinite(Number(lineHeight)) ? Number(lineHeight) : 100;
+  const configurationKey = `enabled:${normalizedFont}:${normalizedSize}:${normalizedLineHeight}`;
 
-  if (appliedFontFamily === fontFamily && appliedConfigurationKey !== "disabled") {
-    appliedConfigurationKey = configurationKey;
-    installFontStyles(fontFamily, size, lineHeight);
-    queueIconProtection();
-    return;
-  }
+  if (appliedConfigurationKey === configurationKey) return;
 
   const currentToken = ++fontLoadToken;
   appliedConfigurationKey = configurationKey;
+
   try {
-    installFontStyles(fontFamily, size, lineHeight);
-    startIconProtection();
-    loadGoogleFontStylesheet(fontFamily);
-    await waitForFont(fontFamily);
-    if (currentToken !== fontLoadToken) return;
-    queueIconProtection();
-    appliedFontFamily = fontFamily;
-    await verifyFontApplication(fontFamily, currentToken);
+    if (normalizedFont) {
+      const fontChanged = appliedFontFamily !== normalizedFont;
+      installFontStyles(normalizedFont, normalizedSize, normalizedLineHeight);
+      startIconProtection();
+
+      if (fontChanged) {
+        loadGoogleFontStylesheet(normalizedFont);
+        await waitForFont(normalizedFont);
+        if (currentToken !== fontLoadToken) return;
+        appliedFontFamily = normalizedFont;
+        queueIconProtection();
+        await verifyFontApplication(normalizedFont, currentToken);
+      } else {
+        queueIconProtection();
+      }
+      return;
+    }
+
+    appliedFontFamily = "";
+    stopIconProtection();
+    document.getElementById("typeshift-custom-styles")?.remove();
+    document.getElementById("typeshift-google-font")?.remove();
+    startTypographyProtection(normalizedSize, normalizedLineHeight);
   } catch (error) {
-    console.error("TypeShift: unable to apply font", error);
+    console.error("TypeShift: unable to apply configuration", error);
   }
 }
 
@@ -299,9 +313,9 @@ function removeFontShift() {
   appliedConfigurationKey = "disabled";
   appliedFontFamily = "";
   stopIconProtection();
+  stopTypographyProtection();
   document.getElementById("typeshift-custom-styles")?.remove();
   document.getElementById("typeshift-google-font")?.remove();
-  typographyBaseMetrics = null;
 }
 
 function resolveConfiguration(result, hostname) {
@@ -334,8 +348,7 @@ function applyStoredConfiguration(force = false) {
       const configurationKey = disabled ? "disabled" : `enabled:${configuration.fontFamily || ""}:${configuration.size}:${configuration.lineHeight}`;
       if (!force && configurationKey === appliedConfigurationKey) return;
       if (disabled) removeFontShift();
-      else if (configuration.fontFamily) applyFontShift(configuration.fontFamily, configuration.size, configuration.lineHeight);
-      else removeFontShift();
+      else applyConfiguration(configuration.fontFamily, configuration.size, configuration.lineHeight);
     },
   );
 }
@@ -345,7 +358,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "applyConfiguration") {
     chrome.storage.local.get(["enabled"], (result) => {
       if (result.enabled === false) { removeFontShift(); sendResponse({ success: false, disabled: true }); return; }
-      applyFontShift(request.fontFamily, request.size, request.lineHeight);
+      applyConfiguration(request.fontFamily, request.size, request.lineHeight);
       sendResponse({ success: true });
     });
     return true;
@@ -360,7 +373,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       chrome.storage.local.get(["globalConfig", "siteConfigs"], (configResult) => {
         const globalConfig = configResult.globalConfig || {};
         const siteConfig = configResult.siteConfigs?.[window.location.hostname] || {};
-        applyFontShift(
+        applyConfiguration(
           request.fontFamily,
           siteConfig.size ?? globalConfig.size ?? 100,
           siteConfig.lineHeight ?? globalConfig.lineHeight ?? 100,
