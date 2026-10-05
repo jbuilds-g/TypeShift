@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fontSizeValue = document.getElementById("font-size-value");
   const lineHeightControl = document.getElementById("line-height-control");
   const lineHeightValue = document.getElementById("line-height-value");
+  const resetTypographyBtn = document.getElementById("reset-typography-btn");
 
   function getHostname(url) {
     try {
@@ -91,15 +92,31 @@ document.addEventListener("DOMContentLoaded", () => {
     return globalConfig.fontFamily || "";
   }
 
+  function hasLocalTypographyOverrides() {
+    return Boolean(
+      activeScope === "site" &&
+      currentHostname &&
+      siteConfigs[currentHostname] &&
+      ("size" in siteConfigs[currentHostname] || "lineHeight" in siteConfigs[currentHostname]),
+    );
+  }
+
   function updateTypographyControls() {
     const config = getEffectiveConfiguration();
     fontSizeControl.value = config.size;
     lineHeightControl.value = config.lineHeight;
     fontSizeValue.value = config.size + "%";
     lineHeightValue.value = config.lineHeight + "%";
+    resetTypographyBtn.hidden = activeScope === "site"
+      ? !hasLocalTypographyOverrides()
+      : false;
+    resetTypographyBtn.textContent = activeScope === "site" ? "Reset Typography" : "Reset Typography";
+    resetTypographyBtn.title = activeScope === "site"
+      ? "Reset this site's font size and line height to the global settings"
+      : "Reset the global font size and line height to 100%";
   }
 
-  function saveTypographyValue(key, value) {
+  function saveTypographyValue(key, value, persist = true) {
     if (!enabled) return;
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) return;
@@ -108,8 +125,14 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       globalConfig = { ...globalConfig, [key]: numericValue };
     }
-    chrome.storage.local.set({ configurationVersion: CONFIGURATION_VERSION, globalConfig, siteConfigs, activeFont: globalConfig.fontFamily || "", siteFonts: buildLegacySiteFonts() }, () => {
-      applyConfigurationToCurrentTab();
+    applyConfigurationToCurrentTab();
+    if (!persist) return;
+    chrome.storage.local.set({
+      configurationVersion: CONFIGURATION_VERSION,
+      globalConfig,
+      siteConfigs,
+      activeFont: globalConfig.fontFamily || "",
+      siteFonts: buildLegacySiteFonts(),
     });
   }
 
@@ -260,8 +283,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
   enabledToggle.addEventListener("change", () => setEnabled(enabledToggle.checked));
 
-  fontSizeControl.addEventListener("input", () => { fontSizeValue.value = fontSizeControl.value + "%"; saveTypographyValue("size", fontSizeControl.value); });
-  lineHeightControl.addEventListener("input", () => { lineHeightValue.value = lineHeightControl.value + "%"; saveTypographyValue("lineHeight", lineHeightControl.value); });
+  fontSizeControl.addEventListener("input", () => {
+    fontSizeValue.value = fontSizeControl.value + "%";
+    saveTypographyValue("size", fontSizeControl.value, false);
+  });
+  fontSizeControl.addEventListener("change", () => {
+    saveTypographyValue("size", fontSizeControl.value);
+  });
+  lineHeightControl.addEventListener("input", () => {
+    lineHeightValue.value = lineHeightControl.value + "%";
+    saveTypographyValue("lineHeight", lineHeightControl.value, false);
+  });
+  lineHeightControl.addEventListener("change", () => {
+    saveTypographyValue("lineHeight", lineHeightControl.value);
+  });
+
+  resetTypographyBtn.addEventListener("click", () => {
+    if (activeScope === "site" && currentHostname) {
+      const site = siteConfigs[currentHostname];
+      if (!site) return;
+      const nextSite = { ...site };
+      delete nextSite.size;
+      delete nextSite.lineHeight;
+      if (Object.keys(nextSite).length) siteConfigs[currentHostname] = nextSite;
+      else delete siteConfigs[currentHostname];
+      chrome.storage.local.set(
+        { siteConfigs, siteFonts: buildLegacySiteFonts(), configurationVersion: CONFIGURATION_VERSION },
+        () => {
+          updateTypographyControls();
+          applyConfigurationToCurrentTab();
+          showStatus("Site typography reset to the global settings.");
+        },
+      );
+      return;
+    }
+
+    globalConfig = { ...globalConfig, size: 100, lineHeight: 100 };
+    chrome.storage.local.set(
+      {
+        configurationVersion: CONFIGURATION_VERSION,
+        globalConfig,
+        siteConfigs,
+        activeFont: globalConfig.fontFamily || "",
+        siteFonts: buildLegacySiteFonts(),
+      },
+      () => {
+        updateTypographyControls();
+        applyConfigurationToCurrentTab();
+        showStatus("Global typography reset to 100%.");
+      },
+    );
+  });
 
   globalTab.addEventListener("click", () => {
     activeScope = "global";
