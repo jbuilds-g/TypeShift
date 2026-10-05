@@ -262,38 +262,76 @@ button {
   min-width: 0;
 }
 .secondary-btn {
-  background: #e2e8f0;
-  color: #475569;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
 }
 .secondary-btn:hover {
-  background: #cbd5e1;
+  background: #fde68a;
 }
 #toggle-disable-btn {
-  background: #e2e8f0;
-  color: #475569;
-}
-#toggle-disable-btn:hover {
-  background: #cbd5e1;
-}
-#toggle-disable-btn.is-disabled {
   background: #fee2e2;
   color: #b91c1c;
+  border: 1px solid #fecaca;
 }
-#toggle-disable-btn.is-disabled:hover {
+#toggle-disable-btn:hover {
   background: #fecaca;
 }
-body[data-theme="dark"] .secondary-btn,
-body[data-theme="dark"] #toggle-disable-btn,
-body[data-theme="pitch-black"] .secondary-btn,
-body[data-theme="pitch-black"] #toggle-disable-btn {
-  background: #374151;
-  color: inherit;
+#toggle-disable-btn.is-disabled {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0;
 }
-body[data-theme="dark"] .secondary-btn:hover,
-body[data-theme="dark"] #toggle-disable-btn:hover,
-body[data-theme="pitch-black"] .secondary-btn:hover,
+#toggle-disable-btn.is-disabled:hover {
+  background: #bbf7d0;
+}
+body[data-theme="dark"] .secondary-btn {
+  background: #422d12;
+  color: #fbbf24;
+  border-color: #6b4b1f;
+}
+body[data-theme="dark"] .secondary-btn:hover {
+  background: #533913;
+}
+body[data-theme="dark"] #toggle-disable-btn {
+  background: #451a1a;
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+body[data-theme="dark"] #toggle-disable-btn:hover {
+  background: #5b2020;
+}
+body[data-theme="dark"] #toggle-disable-btn.is-disabled {
+  background: #16351f;
+  color: #86efac;
+  border-color: #166534;
+}
+body[data-theme="dark"] #toggle-disable-btn.is-disabled:hover {
+  background: #1d4729;
+}
+body[data-theme="pitch-black"] .secondary-btn {
+  background: #2d200c;
+  color: #fbbf24;
+  border-color: #5a4014;
+}
+body[data-theme="pitch-black"] .secondary-btn:hover {
+  background: #3b2a0f;
+}
+body[data-theme="pitch-black"] #toggle-disable-btn {
+  background: #321414;
+  color: #fca5a5;
+  border-color: #701f1f;
+}
 body[data-theme="pitch-black"] #toggle-disable-btn:hover {
-  background: #4b5563;
+  background: #441b1b;
+}
+body[data-theme="pitch-black"] #toggle-disable-btn.is-disabled {
+  background: #102918;
+  color: #86efac;
+  border-color: #14532d;
+}
+body[data-theme="pitch-black"] #toggle-disable-btn.is-disabled:hover {
+  background: #17381f;
 }
 body[data-theme="dark"] .site-heading,
 body[data-theme="pitch-black"] .site-heading {
@@ -311,24 +349,58 @@ body[data-theme="pitch-black"] .site-heading {
   padding: 8px 6px;
   margin-bottom: 0;
   border-radius: 4px;
-  background: #e2e8f0;
-  color: #475569;
   font-weight: bold;
   font-size: 13px;
   text-align: center;
   text-decoration: none;
 }
-.secondary-link:hover {
-  background: #cbd5e1;
+.manage-link {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
 }
-body[data-theme="dark"] .secondary-link,
-body[data-theme="pitch-black"] .secondary-link {
-  background: #374151;
-  color: inherit;
+.manage-link:hover {
+  background: #bfdbfe;
 }
-body[data-theme="dark"] .secondary-link:hover,
-body[data-theme="pitch-black"] .secondary-link:hover {
-  background: #4b5563;
+.settings-link {
+  background: #e0e7ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+.settings-link:hover {
+  background: #c7d2fe;
+}
+body[data-theme="dark"] .manage-link {
+  background: #172554;
+  color: #93c5fd;
+  border-color: #1e3a8a;
+}
+body[data-theme="dark"] .manage-link:hover {
+  background: #1e3a8a;
+}
+body[data-theme="dark"] .settings-link {
+  background: #1e1b4b;
+  color: #a5b4fc;
+  border-color: #312e81;
+}
+body[data-theme="dark"] .settings-link:hover {
+  background: #312e81;
+}
+body[data-theme="pitch-black"] .manage-link {
+  background: #101f3f;
+  color: #93c5fd;
+  border-color: #18356b;
+}
+body[data-theme="pitch-black"] .manage-link:hover {
+  background: #17356b;
+}
+body[data-theme="pitch-black"] .settings-link {
+  background: #17143a;
+  color: #a5b4fc;
+  border-color: #28246a;
+}
+body[data-theme="pitch-black"] .settings-link:hover {
+  background: #28246a;
 }
 #status-message {
   display: none;
