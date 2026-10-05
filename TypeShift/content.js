@@ -149,7 +149,13 @@ function startTypographyProtection(size = 100, lineHeight = 100) {
         });
       } else if (
         mutation.type === "attributes" &&
-        ["class", "style", "hidden", "aria-hidden", "role"].includes(mutation.attributeName)
+        ["class", "hidden", "aria-hidden", "role"].includes(mutation.attributeName)
+      ) {
+        queueTypography(mutation.target);
+      } else if (
+        mutation.type === "attributes" &&
+        mutation.attributeName === "style" &&
+        !typographyTouched.has(mutation.target)
       ) {
         queueTypography(mutation.target);
       }
