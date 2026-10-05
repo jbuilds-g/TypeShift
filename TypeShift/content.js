@@ -94,7 +94,6 @@ function restoreTypography() {
   });
   typographyTouched.clear();
   typographyPending.clear();
-  stopTypographyProtection();
 }
 
 function applyTypographyToElement(element, sizeScale, lineHeightScale) {
