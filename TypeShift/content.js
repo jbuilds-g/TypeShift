@@ -20,6 +20,7 @@ let iconProtectionFrame = 0;
 let iconProtectionPending = new Set();
 let fontLoadToken = 0;
 let appliedConfigurationKey = null;
+let typographyBaseMetrics = null;
 
 function detectIcons() {
   const iconSignatures = [
@@ -141,13 +142,21 @@ function installFontStyles(fontFamily, size = 100, lineHeight = 100) {
     (document.head || document.documentElement).appendChild(styleEl);
   }
 
-  const body = document.body;
-  const computedBody = body ? window.getComputedStyle(body) : null;
-  const baseFontSize = computedBody?.fontSize || "16px";
-  const parsedLineHeight = Number.parseFloat(computedBody?.lineHeight || "");
-  const baseLineHeight = Number.isFinite(parsedLineHeight)
-    ? `${parsedLineHeight}px`
-    : `${Number.parseFloat(baseFontSize) * 1.4}px`;
+  if (!typographyBaseMetrics) {
+    const body = document.body;
+    const computedBody = body ? window.getComputedStyle(body) : null;
+    const baseFontSize = computedBody?.fontSize || "16px";
+    const parsedFontSize = Number.parseFloat(baseFontSize);
+    const parsedLineHeight = Number.parseFloat(computedBody?.lineHeight || "");
+    typographyBaseMetrics = {
+      fontSize: baseFontSize,
+      lineHeight: Number.isFinite(parsedLineHeight)
+        ? `${parsedLineHeight}px`
+        : `${(Number.isFinite(parsedFontSize) ? parsedFontSize : 16) * 1.4}px`,
+    };
+  }
+
+  const { fontSize: baseFontSize, lineHeight: baseLineHeight } = typographyBaseMetrics;
 
   styleEl.textContent = `
     :root {
@@ -254,6 +263,7 @@ function removeFontShift() {
   stopIconProtection();
   document.getElementById("typeshift-custom-styles")?.remove();
   document.getElementById("typeshift-google-font")?.remove();
+  typographyBaseMetrics = null;
 }
 
 function resolveConfiguration(result, hostname) {
