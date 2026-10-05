@@ -20,6 +20,7 @@ let iconProtectionFrame = 0;
 let iconProtectionPending = new Set();
 let fontLoadToken = 0;
 let appliedConfigurationKey = null;
+let appliedFontFamily = "";
 let typographyBaseMetrics = null;
 
 function detectIcons() {
@@ -242,8 +243,17 @@ async function verifyFontApplication(fontFamily, currentToken) {
 }
 
 async function applyFontShift(fontFamily, size = 100, lineHeight = 100) {
+  const configurationKey = `enabled:${fontFamily}:${size}:${lineHeight}`;
+
+  if (appliedFontFamily === fontFamily && appliedConfigurationKey !== "disabled") {
+    appliedConfigurationKey = configurationKey;
+    installFontStyles(fontFamily, size, lineHeight);
+    queueIconProtection();
+    return;
+  }
+
   const currentToken = ++fontLoadToken;
-  appliedConfigurationKey = `enabled:${fontFamily}:${size}:${lineHeight}`;
+  appliedConfigurationKey = configurationKey;
   try {
     installFontStyles(fontFamily, size, lineHeight);
     startIconProtection();
@@ -251,6 +261,7 @@ async function applyFontShift(fontFamily, size = 100, lineHeight = 100) {
     await waitForFont(fontFamily);
     if (currentToken !== fontLoadToken) return;
     queueIconProtection();
+    appliedFontFamily = fontFamily;
     await verifyFontApplication(fontFamily, currentToken);
   } catch (error) {
     console.error("TypeShift: unable to apply font", error);
@@ -260,6 +271,7 @@ async function applyFontShift(fontFamily, size = 100, lineHeight = 100) {
 function removeFontShift() {
   fontLoadToken++;
   appliedConfigurationKey = "disabled";
+  appliedFontFamily = "";
   stopIconProtection();
   document.getElementById("typeshift-custom-styles")?.remove();
   document.getElementById("typeshift-google-font")?.remove();
