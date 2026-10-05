@@ -22,6 +22,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const dropdownMenu = document.getElementById("dropdown-menu");
   const fontOptionsList = document.getElementById("font-options-list");
   let highlightedIndex = -1;
+  const fontSizeControl = document.getElementById("font-size-control");
+  const fontSizeValue = document.getElementById("font-size-value");
+  const lineHeightControl = document.getElementById("line-height-control");
+  const lineHeightValue = document.getElementById("line-height-value");
 
   function getHostname(url) {
     try {
@@ -71,11 +75,50 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function getEffectiveConfiguration() {
+    const site = activeScope === "site" && currentHostname ? siteConfigs[currentHostname] || {} : {};
+    return {
+      fontFamily: site.fontFamily || globalConfig.fontFamily || "",
+      size: site.size ?? globalConfig.size ?? 100,
+      lineHeight: site.lineHeight ?? globalConfig.lineHeight ?? 100,
+    };
+  }
+
   function getEffectiveFont() {
     if (activeScope === "site" && currentHostname && siteConfigs[currentHostname]?.fontFamily) {
       return siteConfigs[currentHostname].fontFamily;
     }
     return globalConfig.fontFamily || "";
+  }
+
+  function updateTypographyControls() {
+    const config = getEffectiveConfiguration();
+    fontSizeControl.value = config.size;
+    lineHeightControl.value = config.lineHeight;
+    fontSizeValue.value = config.size + "%";
+    lineHeightValue.value = config.lineHeight + "%";
+  }
+
+  function saveTypographyValue(key, value) {
+    if (!enabled) return;
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return;
+    if (activeScope === "site" && currentHostname) {
+      siteConfigs[currentHostname] = { ...(siteConfigs[currentHostname] || {}), [key]: numericValue };
+    } else {
+      globalConfig = { ...globalConfig, [key]: numericValue };
+    }
+    chrome.storage.local.set({ configurationVersion: CONFIGURATION_VERSION, globalConfig, siteConfigs, activeFont: globalConfig.fontFamily || "", siteFonts: buildLegacySiteFonts() }, () => {
+      applyConfigurationToCurrentTab();
+    });
+  }
+
+  function applyConfigurationToCurrentTab() {
+    const config = getEffectiveConfiguration();
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs[0]?.id) return;
+      chrome.tabs.sendMessage(tabs[0].id, { action: "applyConfiguration", fontFamily: config.fontFamily, size: config.size, lineHeight: config.lineHeight }, () => {});
+    });
   }
 
   function setFontValue(font, shouldApply = true) {
@@ -197,6 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     selectedFontValue = getEffectiveFont();
     setFontValue(selectedFontValue, false);
+    updateTypographyControls();
     updateToggleUI();
     statusMessage.style.display = "none";
   }
@@ -215,6 +259,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   enabledToggle.addEventListener("change", () => setEnabled(enabledToggle.checked));
+
+  fontSizeControl.addEventListener("input", () => { fontSizeValue.value = fontSizeControl.value + "%"; saveTypographyValue("size", fontSizeControl.value); });
+  lineHeightControl.addEventListener("input", () => { lineHeightValue.value = lineHeightControl.value + "%"; saveTypographyValue("lineHeight", lineHeightControl.value); });
 
   globalTab.addEventListener("click", () => {
     activeScope = "global";
