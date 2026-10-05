@@ -140,14 +140,31 @@ function installFontStyles(fontFamily, size = 100, lineHeight = 100) {
     styleEl.id = styleId;
     (document.head || document.documentElement).appendChild(styleEl);
   }
+
+  const body = document.body;
+  const computedBody = body ? window.getComputedStyle(body) : null;
+  const baseFontSize = computedBody?.fontSize || "16px";
+  const parsedLineHeight = Number.parseFloat(computedBody?.lineHeight || "");
+  const baseLineHeight = Number.isFinite(parsedLineHeight)
+    ? `${parsedLineHeight}px`
+    : `${Number.parseFloat(baseFontSize) * 1.4}px`;
+
   styleEl.textContent = `
-    :root { --typeshift-global-font: "${fontFamily}", sans-serif; --typeshift-size: ${Number(size) / 100}; --typeshift-line-height: ${Number(lineHeight) / 100}; }
+    :root {
+      --typeshift-global-font: "${fontFamily}", sans-serif;
+      --typeshift-size: ${Number(size) / 100};
+      --typeshift-line-height: ${Number(lineHeight) / 100};
+      --typeshift-base-font-size: ${baseFontSize};
+      --typeshift-base-line-height: ${baseLineHeight};
+    }
     *:not(svg):not([role="img"]):not([aria-hidden="true"]):not([class*="icon"]):not([class*="Icon"]):not([class*="fa-"]):not([class*="fas-"]):not([class*="fab-"]):not([class*="far-"]):not([class*="mdi-"]):not([class*="bi-"]):not([class*="ri-"]):not([class*="ti-"]):not([class*="glyphicon-"]):not([class*="codicon-"]):not([class*="octicon-"]):not([class*="lucide-"]):not([class*="ph-"]):not([class*="feather-"]):not(.material-icons):not(.material-symbols-outlined):not(.material-symbols-rounded):not(.material-symbols-sharp):not(i[class]):not([data-typeshift-icon-font]) {
       font-family: var(--typeshift-global-font) !important;
     }
     [data-typeshift-icon-font] { font-family: var(--typeshift-original-font) !important; }
-    body { zoom: var(--typeshift-size); }
-    *:not(svg):not([role="img"]):not([aria-hidden="true"]):not([data-typeshift-icon-font]) { line-height: var(--typeshift-line-height) !important; }
+    body {
+      font-size: calc(var(--typeshift-base-font-size) * var(--typeshift-size));
+      line-height: calc(var(--typeshift-base-line-height) * var(--typeshift-line-height));
+    }
   `;
   return styleEl;
 }
