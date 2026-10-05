@@ -217,7 +217,7 @@ async function verifyFontApplication(fontFamily, currentToken) {
 
 async function applyFontShift(fontFamily, size = 100, lineHeight = 100) {
   const currentToken = ++fontLoadToken;
-  appliedConfigurationKey = `enabled:${fontFamily}`;
+  appliedConfigurationKey = `enabled:${fontFamily}:${size}:${lineHeight}`;
   try {
     installFontStyles(fontFamily, size, lineHeight);
     startIconProtection();
@@ -292,7 +292,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: false, disabled: true });
         return;
       }
-      applyFontShift(request.fontFamily);
+      chrome.storage.local.get(["globalConfig", "siteConfigs"], (configResult) => {
+        const globalConfig = configResult.globalConfig || {};
+        const siteConfig = configResult.siteConfigs?.[window.location.hostname] || {};
+        applyFontShift(
+          request.fontFamily,
+          siteConfig.size ?? globalConfig.size ?? 100,
+          siteConfig.lineHeight ?? globalConfig.lineHeight ?? 100,
+        );
+      });
       sendResponse({ success: true });
     });
     return true;
