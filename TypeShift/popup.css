@@ -251,6 +251,14 @@ button {
     background 0.2s,
     opacity 0.2s;
 }
+.typography-controls { margin: 0 0 12px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; }
+.control-row + .control-row { margin-top: 12px; }
+.control-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
+.control-label output { color: #64748b; font-variant-numeric: tabular-nums; }
+.range-control { width: 100%; margin: 0; padding: 0; cursor: pointer; }
+body[data-theme="dark"] .typography-controls { background: #374151; border-color: #4b5563; }
+body[data-theme="dark"] .control-label output, body[data-theme="pitch-black"] .control-label output { color: #9ca3af; }
+body[data-theme="pitch-black"] .typography-controls { background: #121212; border-color: #27272a; }
 .site-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
