@@ -256,6 +256,11 @@ button {
 .control-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 12px; font-weight: 600; }
 .control-label output { color: #64748b; font-variant-numeric: tabular-nums; }
 .range-control { width: 100%; margin: 0; padding: 0; cursor: pointer; }
+.typography-reset-btn {
+  margin: 12px 0 0;
+  padding: 7px 8px;
+  font-size: 12px;
+}
 body[data-theme="dark"] .typography-controls { background: #374151; border-color: #4b5563; }
 body[data-theme="dark"] .control-label output, body[data-theme="pitch-black"] .control-label output { color: #9ca3af; }
 body[data-theme="pitch-black"] .typography-controls { background: #121212; border-color: #27272a; }
