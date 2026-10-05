@@ -171,6 +171,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateToggleUI() {
     const isDisabled = disabledDomains.includes(currentHostname);
     toggleDisableBtn.textContent = isDisabled ? "Enable for this website" : "Disable for this website";
+    toggleDisableBtn.title = isDisabled
+      ? "Re-enable TypeShift on this website"
+      : "Temporarily disable TypeShift on this website";
     toggleDisableBtn.classList.toggle("is-disabled", isDisabled);
   }
 
