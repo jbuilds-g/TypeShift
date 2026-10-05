@@ -18,15 +18,15 @@ const ICON_CLASS_SELECTORS = [
 let iconProtectionObserver = null;
 let iconProtectionFrame = 0;
 let iconProtectionPending = new Set();
-let fontLoadToken = 0;
-let appliedConfigurationKey = null;
-let appliedFontFamily = "";
-let typographyBaseMetrics = null;
-const typographyOriginals = new WeakMap();
-const typographyTouched = new Set();
 let typographyObserver = null;
 let typographyFrame = 0;
 let typographyPending = new Set();
+let fontLoadToken = 0;
+let appliedConfigurationKey = null;
+let appliedFontFamily = "";
+
+const typographyOriginals = new WeakMap();
+const typographyTouched = new Set();
 
 const TYPOGRAPHY_SKIP_SELECTOR = [
   "html", "head", "body", "script", "style", "link", "meta", "title",
@@ -37,12 +37,103 @@ const TYPOGRAPHY_SKIP_SELECTOR = [
   ...ICON_CLASS_SELECTORS,
 ].join(",");
 
+function detectIcons() {
+  const iconSignatures = [
+    'link[href*="font-awesome"]',
+    'link[href*="fontawesome"]',
+    'link[href*="material-icons"]',
+    'link[href*="material-symbols"]',
+    ...ICON_CLASS_SELECTORS,
+    "svg",
+  ];
+
+  return iconSignatures.some((selector) => document.querySelector(selector));
+}
+
+function looksLikeIconFont(fontFamily) {
+  const normalized = fontFamily.toLowerCase();
+  return ICON_FONT_HINTS.some((hint) => normalized.includes(hint));
+}
+
+function protectIconFonts(root = document) {
+  const elements = root.querySelectorAll ? root.querySelectorAll("*") : [];
+
+  elements.forEach((element) => {
+    if (
+      element.hasAttribute("data-typeshift-icon-font") ||
+      element.matches('svg, [role="img"], [aria-hidden="true"]')
+    ) {
+      return;
+    }
+
+    const computedFont = window.getComputedStyle(element).fontFamily;
+    if (looksLikeIconFont(computedFont)) {
+      element.setAttribute("data-typeshift-icon-font", "");
+      element.style.setProperty("--typeshift-original-font", computedFont);
+    }
+  });
+}
+
+function queueIconProtection(element = document.body) {
+  if (element instanceof Element) iconProtectionPending.add(element);
+  if (iconProtectionFrame) return;
+
+  iconProtectionFrame = requestAnimationFrame(() => {
+    iconProtectionFrame = 0;
+    const pending = [...iconProtectionPending];
+    iconProtectionPending.clear();
+
+    pending.forEach((root) => {
+      if (!root.isConnected) return;
+      protectIconFonts(root);
+    });
+  });
+}
+
+function startIconProtection() {
+  protectIconFonts();
+
+  if (iconProtectionObserver) iconProtectionObserver.disconnect();
+
+  iconProtectionObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type !== "childList") return;
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) queueIconProtection(node);
+      });
+    });
+  });
+
+  iconProtectionObserver.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+}
+
+function stopIconProtection() {
+  if (iconProtectionObserver) {
+    iconProtectionObserver.disconnect();
+    iconProtectionObserver = null;
+  }
+
+  if (iconProtectionFrame) {
+    cancelAnimationFrame(iconProtectionFrame);
+    iconProtectionFrame = 0;
+  }
+
+  iconProtectionPending.clear();
+
+  document.querySelectorAll("[data-typeshift-icon-font]").forEach((element) => {
+    element.style.removeProperty("--typeshift-original-font");
+    element.removeAttribute("data-typeshift-icon-font");
+  });
+}
+
 function isTypographyCandidate(element) {
   if (!(element instanceof HTMLElement)) return false;
   if (element.matches(TYPOGRAPHY_SKIP_SELECTOR)) return false;
   if (element.closest(TYPOGRAPHY_SKIP_SELECTOR)) return false;
-  if (!element.textContent?.trim()) return false;
-  return true;
+  return Boolean(element.textContent?.trim());
 }
 
 function getOriginalTypography(element) {
@@ -102,9 +193,11 @@ function applyTypographyToElement(element, sizeScale, lineHeightScale) {
   const original = getOriginalTypography(element);
   if (!original) return;
 
-  element.style.setProperty("font-size", `${original.fontSize * sizeScale}px`, "important");
+  if (sizeScale !== 1) {
+    element.style.setProperty("font-size", `${original.fontSize * sizeScale}px`, "important");
+  }
 
-  if (original.lineHeight !== null) {
+  if (lineHeightScale !== 1 && original.lineHeight !== null) {
     element.style.setProperty(
       "line-height",
       `${original.lineHeight * lineHeightScale}px`,
@@ -125,9 +218,14 @@ function queueTypography(element = document.body) {
 
     const sizeScale = Number(window.__typeshiftSizeScale || 1);
     const lineHeightScale = Number(window.__typeshiftLineHeightScale || 1);
+
     pending.forEach((root) => {
       if (!root.isConnected) return;
-      if (root instanceof HTMLElement) applyTypographyToElement(root, sizeScale, lineHeightScale);
+
+      if (root instanceof HTMLElement) {
+        applyTypographyToElement(root, sizeScale, lineHeightScale);
+      }
+
       root.querySelectorAll?.("*").forEach((element) => {
         applyTypographyToElement(element, sizeScale, lineHeightScale);
       });
@@ -140,21 +238,19 @@ function startTypographyProtection(size = 100, lineHeight = 100) {
   window.__typeshiftLineHeightScale = Number(lineHeight) / 100;
 
   if (typographyObserver) typographyObserver.disconnect();
+
   typographyObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.type === "childList") {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) queueTypography(node);
         });
-      } else if (
+        return;
+      }
+
+      if (
         mutation.type === "attributes" &&
         ["class", "hidden", "aria-hidden", "role"].includes(mutation.attributeName)
-      ) {
-        queueTypography(mutation.target);
-      } else if (
-        mutation.type === "attributes" &&
-        mutation.attributeName === "style" &&
-        !typographyTouched.has(mutation.target)
       ) {
         queueTypography(mutation.target);
       }
@@ -165,7 +261,7 @@ function startTypographyProtection(size = 100, lineHeight = 100) {
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ["class", "style", "hidden", "aria-hidden", "role"],
+    attributeFilter: ["class", "hidden", "aria-hidden", "role"],
   });
 
   queueTypography(document.body);
@@ -176,96 +272,107 @@ function stopTypographyProtection() {
     typographyObserver.disconnect();
     typographyObserver = null;
   }
+
   if (typographyFrame) {
     cancelAnimationFrame(typographyFrame);
     typographyFrame = 0;
   }
+
   restoreTypography();
   delete window.__typeshiftSizeScale;
   delete window.__typeshiftLineHeightScale;
 }
 
-function installFontStyles(fontFamily, size = 100, lineHeight = 100) {
+function getGoogleFontUrl(fontFamily) {
+  const encoded = encodeURIComponent(fontFamily).replace(/%20/g, "+");
+  return `https://fonts.googleapis.com/css2?family=${encoded}&display=swap`;
+}
+
+async function loadGoogleFontStylesheet(fontFamily) {
+  const styleId = "typeshift-google-font";
+  const existing = document.getElementById(styleId);
+
+  if (existing?.dataset.fontFamily === fontFamily) {
+    return;
+  }
+
+  existing?.remove();
+
+  const url = getGoogleFontUrl(fontFamily);
+
+  try {
+    const response = await fetch(url, { cache: "force-cache" });
+    if (!response.ok) {
+      throw new Error(`Font stylesheet request failed: ${response.status}`);
+    }
+
+    const css = await response.text();
+    if (!css.includes("@font-face")) {
+      throw new Error("Google Fonts returned no font-face rules");
+    }
+
+    const styleEl = document.createElement("style");
+    styleEl.id = styleId;
+    styleEl.dataset.fontFamily = fontFamily;
+    styleEl.textContent = css;
+    (document.head || document.documentElement).appendChild(styleEl);
+  } catch (error) {
+    const link = document.createElement("link");
+    link.id = styleId;
+    link.rel = "stylesheet";
+    link.href = url;
+    link.dataset.fontFamily = fontFamily;
+
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Font stylesheet load timed out")), 8000);
+      link.onload = () => {
+        clearTimeout(timeout);
+        resolve();
+      };
+      link.onerror = () => {
+        clearTimeout(timeout);
+        reject(new Error("Font stylesheet could not be loaded"));
+      };
+      (document.head || document.documentElement).appendChild(link);
+    });
+
+    console.warn("TypeShift: used stylesheet fallback for font loading", error);
+  }
+}
+
+async function waitForFont(fontFamily) {
+  if (!document.fonts) return;
+
+  try {
+    await document.fonts.load(`16px "${fontFamily}"`);
+  } catch (error) {
+    console.warn(`TypeShift: font load check failed for "${fontFamily}"`, error);
+  }
+}
+
+function installFontStyles(fontFamily) {
   const styleId = "typeshift-custom-styles";
   let styleEl = document.getElementById(styleId);
+
   if (!styleEl) {
     styleEl = document.createElement("style");
     styleEl.id = styleId;
     (document.head || document.documentElement).appendChild(styleEl);
   }
 
+  const safeFontFamily = JSON.stringify(fontFamily);
+
   styleEl.textContent = `
-    :root { --typeshift-global-font: "${fontFamily}", sans-serif; }
+    :root { --typeshift-global-font: ${safeFontFamily}, sans-serif; }
+
     *:not(svg):not([role="img"]):not([aria-hidden="true"]):not([class*="icon"]):not([class*="Icon"]):not([class*="fa-"]):not([class*="fas-"]):not([class*="fab-"]):not([class*="far-"]):not([class*="mdi-"]):not([class*="bi-"]):not([class*="ri-"]):not([class*="ti-"]):not([class*="glyphicon-"]):not([class*="codicon-"]):not([class*="octicon-"]):not([class*="lucide-"]):not([class*="ph-"]):not([class*="feather-"]):not(.material-icons):not(.material-symbols-outlined):not(.material-symbols-rounded):not(.material-symbols-sharp):not(i[class]):not([data-typeshift-icon-font]) {
       font-family: var(--typeshift-global-font) !important;
     }
-    [data-typeshift-icon-font] { font-family: var(--typeshift-original-font) !important; }
+
+    [data-typeshift-icon-font] {
+      font-family: var(--typeshift-original-font) !important;
+    }
   `;
-
-  startTypographyProtection(size, lineHeight);
-  return styleEl;
-}
-async function waitForFont(fontFamily) {
-  if (!document.fonts) return;
-  try { await document.fonts.load(`16px "${fontFamily}"`); }
-  catch (error) { console.warn(`TypeShift: font load check failed for "${fontFamily}"`, error); }
-}
-
-function getVerificationElement() {
-  const walker = document.createTreeWalker(document.body || document.documentElement, NodeFilter.SHOW_ELEMENT);
-  let element = walker.currentNode;
-  while (element) {
-    if (
-      element instanceof Element &&
-      element !== document.body &&
-      element !== document.documentElement &&
-      element.textContent?.trim() &&
-      !element.matches('svg, [role="img"], [aria-hidden="true"], [data-typeshift-icon-font], ' + ICON_CLASS_SELECTORS.join(", "))
-    ) {
-      const rect = element.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) return element;
-    }
-    element = walker.nextNode();
-  }
-  return null;
-}
-
-function firstFontFamily(fontFamily) {
-  return fontFamily.split(",")[0].trim().replace(/^['"]|['"]$/g, "").toLowerCase();
-}
-
-function isFontApplied(fontFamily) {
-  const element = getVerificationElement();
-  if (!element) return true;
-  if (firstFontFamily(window.getComputedStyle(element).fontFamily) !== firstFontFamily(fontFamily)) return false;
-  if (document.fonts) {
-    try { return document.fonts.check(`16px "${fontFamily}"`); }
-    catch { return true; }
-  }
-  return true;
-}
-
-function getRecoveryKey(fontFamily) { return `typeshift-recovery:${fontFamily}`; }
-
-async function verifyFontApplication(fontFamily, currentToken) {
-  const checks = [0, 250, 750];
-  for (const delay of checks) {
-    if (currentToken !== fontLoadToken) return true;
-    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
-    if (isFontApplied(fontFamily)) {
-      sessionStorage.removeItem(getRecoveryKey(fontFamily));
-      return true;
-    }
-  }
-  if (currentToken !== fontLoadToken) return true;
-  const recoveryKey = getRecoveryKey(fontFamily);
-  if (sessionStorage.getItem(recoveryKey) === "1") {
-    sessionStorage.removeItem(recoveryKey);
-    return false;
-  }
-  sessionStorage.setItem(recoveryKey, "1");
-  window.location.reload();
-  return false;
 }
 
 async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100) {
@@ -274,37 +381,56 @@ async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100)
   const normalizedLineHeight = Number.isFinite(Number(lineHeight)) ? Number(lineHeight) : 100;
   const configurationKey = `enabled:${normalizedFont}:${normalizedSize}:${normalizedLineHeight}`;
 
-  if (appliedConfigurationKey === configurationKey) return;
+  if (appliedConfigurationKey === configurationKey) return true;
 
   const currentToken = ++fontLoadToken;
-  appliedConfigurationKey = configurationKey;
 
   try {
     if (normalizedFont) {
-      const fontChanged = appliedFontFamily !== normalizedFont;
-      installFontStyles(normalizedFont, normalizedSize, normalizedLineHeight);
       startIconProtection();
 
-      if (fontChanged) {
-        loadGoogleFontStylesheet(normalizedFont);
+      if (appliedFontFamily !== normalizedFont) {
+        await loadGoogleFontStylesheet(normalizedFont);
+        if (currentToken !== fontLoadToken) return false;
+
         await waitForFont(normalizedFont);
-        if (currentToken !== fontLoadToken) return;
+        if (currentToken !== fontLoadToken) return false;
+
         appliedFontFamily = normalizedFont;
-        queueIconProtection();
-        await verifyFontApplication(normalizedFont, currentToken);
-      } else {
-        queueIconProtection();
       }
-      return;
+
+      installFontStyles(normalizedFont);
+
+      if (normalizedSize !== 100 || normalizedLineHeight !== 100) {
+        startTypographyProtection(normalizedSize, normalizedLineHeight);
+      } else {
+        stopTypographyProtection();
+      }
+
+      queueIconProtection();
+      appliedConfigurationKey = configurationKey;
+      return true;
     }
 
     appliedFontFamily = "";
     stopIconProtection();
     document.getElementById("typeshift-custom-styles")?.remove();
     document.getElementById("typeshift-google-font")?.remove();
-    startTypographyProtection(normalizedSize, normalizedLineHeight);
+
+    if (normalizedSize !== 100 || normalizedLineHeight !== 100) {
+      startTypographyProtection(normalizedSize, normalizedLineHeight);
+    } else {
+      stopTypographyProtection();
+    }
+
+    appliedConfigurationKey = configurationKey;
+    return true;
   } catch (error) {
-    console.error("TypeShift: unable to apply configuration", error);
+    if (currentToken === fontLoadToken) {
+      appliedConfigurationKey = null;
+      console.error("TypeShift: unable to apply configuration", error);
+    }
+    return false;
   }
 }
 
@@ -312,6 +438,7 @@ function removeFontShift() {
   fontLoadToken++;
   appliedConfigurationKey = "disabled";
   appliedFontFamily = "";
+
   stopIconProtection();
   stopTypographyProtection();
   document.getElementById("typeshift-custom-styles")?.remove();
@@ -327,62 +454,111 @@ function resolveConfiguration(result, hostname) {
       source: result.siteFonts?.[hostname] ? "site" : "global",
     };
   }
+
   const globalFont = result.globalConfig?.fontFamily || result.activeFont || "";
-  const siteFont = result.siteConfigs?.[hostname]?.fontFamily || result.siteFonts?.[hostname] || "";
+  const siteFont =
+    result.siteConfigs?.[hostname]?.fontFamily ||
+    result.siteFonts?.[hostname] ||
+    "";
   const globalConfig = result.globalConfig || {};
   const siteConfig = result.siteConfigs?.[hostname] || {};
-  return { fontFamily: siteFont || globalFont, size: siteConfig.size ?? globalConfig.size ?? 100, lineHeight: siteConfig.lineHeight ?? globalConfig.lineHeight ?? 100, source: siteFont ? "site" : "global" };
+
+  return {
+    fontFamily: siteFont || globalFont,
+    size: siteConfig.size ?? globalConfig.size ?? 100,
+    lineHeight: siteConfig.lineHeight ?? globalConfig.lineHeight ?? 100,
+    source: siteFont ? "site" : "global",
+  };
 }
 
 function applyStoredConfiguration(force = false) {
   chrome.storage.local.get(
-    ["configurationVersion", "globalConfig", "siteConfigs", "activeFont", "disabledDomains", "siteFonts", "enabled"],
+    [
+      "configurationVersion",
+      "globalConfig",
+      "siteConfigs",
+      "activeFont",
+      "disabledDomains",
+      "siteFonts",
+      "enabled",
+    ],
     (result) => {
       const hostname = window.location.hostname;
+
       if (result.enabled === false) {
-        if (force || appliedConfigurationKey !== "disabled") removeFontShift();
+        if (force || appliedConfigurationKey !== "disabled") {
+          removeFontShift();
+        }
         return;
       }
+
       const disabled = (result.disabledDomains || []).includes(hostname);
       const configuration = resolveConfiguration(result, hostname);
-      const configurationKey = disabled ? "disabled" : `enabled:${configuration.fontFamily || ""}:${configuration.size}:${configuration.lineHeight}`;
+      const configurationKey = disabled
+        ? "disabled"
+        : `enabled:${configuration.fontFamily || ""}:${configuration.size}:${configuration.lineHeight}`;
+
       if (!force && configurationKey === appliedConfigurationKey) return;
-      if (disabled) removeFontShift();
-      else applyConfiguration(configuration.fontFamily, configuration.size, configuration.lineHeight);
+
+      if (disabled) {
+        removeFontShift();
+      } else {
+        applyConfiguration(
+          configuration.fontFamily,
+          configuration.size,
+          configuration.lineHeight,
+        );
+      }
     },
   );
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "checkIcons") sendResponse({ hasIcons: detectIcons() });
-  if (request.action === "applyConfiguration") {
-    chrome.storage.local.get(["enabled"], (result) => {
-      if (result.enabled === false) { removeFontShift(); sendResponse({ success: false, disabled: true }); return; }
-      applyConfiguration(request.fontFamily, request.size, request.lineHeight);
-      sendResponse({ success: true });
-    });
-    return true;
+  if (request.action === "checkIcons") {
+    sendResponse({ hasIcons: detectIcons() });
+    return;
   }
-  if (request.action === "applyFont") {
-    chrome.storage.local.get(["enabled"], (result) => {
+
+  if (request.action === "applyConfiguration") {
+    chrome.storage.local.get(["enabled"], async (result) => {
       if (result.enabled === false) {
         removeFontShift();
         sendResponse({ success: false, disabled: true });
         return;
       }
-      chrome.storage.local.get(["globalConfig", "siteConfigs"], (configResult) => {
-        const globalConfig = configResult.globalConfig || {};
-        const siteConfig = configResult.siteConfigs?.[window.location.hostname] || {};
-        applyConfiguration(
-          request.fontFamily,
-          siteConfig.size ?? globalConfig.size ?? 100,
-          siteConfig.lineHeight ?? globalConfig.lineHeight ?? 100,
-        );
-      });
-      sendResponse({ success: true });
+
+      const success = await applyConfiguration(
+        request.fontFamily,
+        request.size,
+        request.lineHeight,
+      );
+
+      sendResponse({ success });
     });
     return true;
   }
+
+  if (request.action === "applyFont") {
+    chrome.storage.local.get(["enabled", "globalConfig", "siteConfigs"], async (result) => {
+      if (result.enabled === false) {
+        removeFontShift();
+        sendResponse({ success: false, disabled: true });
+        return;
+      }
+
+      const globalConfig = result.globalConfig || {};
+      const siteConfig = result.siteConfigs?.[window.location.hostname] || {};
+      const success = await applyConfiguration(
+        request.fontFamily,
+        siteConfig.size ?? globalConfig.size ?? 100,
+        siteConfig.lineHeight ?? globalConfig.lineHeight ?? 100,
+      );
+
+      sendResponse({ success });
+    });
+    return true;
+  }
+
   if (request.action === "removeFont") {
     removeFontShift();
     sendResponse({ success: true });
@@ -391,11 +567,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local") return;
+
   const relevantKeys = [
-    "configurationVersion", "globalConfig", "siteConfigs", "activeFont",
-    "disabledDomains", "siteFonts", "enabled",
+    "configurationVersion",
+    "globalConfig",
+    "siteConfigs",
+    "activeFont",
+    "disabledDomains",
+    "siteFonts",
+    "enabled",
   ];
-  if (relevantKeys.some((key) => changes[key])) applyStoredConfiguration();
+
+  if (relevantKeys.some((key) => changes[key])) {
+    applyStoredConfiguration();
+  }
 });
 
 applyStoredConfiguration(true);
