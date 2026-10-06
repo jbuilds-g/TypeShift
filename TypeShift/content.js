@@ -443,15 +443,20 @@ async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100)
     if (normalizedFont) {
       startIconProtection();
 
-      if (appliedFontFamily !== normalizedFont) {
-        await loadGoogleFontStylesheet(normalizedFont);
-        if (currentToken !== fontLoadToken) return false;
-
-        await waitForFont(normalizedFont);
-        if (currentToken !== fontLoadToken) return false;
+      if (isLocalFont(normalizedFont)) {
+        document.getElementById("typeshift-google-font")?.remove();
+        appliedFontFamily = normalizedFont;
+      } else if (appliedFontFamily !== normalizedFont) {
+        const loaded = await loadGoogleFontStylesheet(normalizedFont, currentToken);
+        if (!loaded || currentToken !== fontLoadToken) return false;
 
         appliedFontFamily = normalizedFont;
+      } else {
+        const loaded = await waitForFont(normalizedFont);
+        if (!loaded || currentToken !== fontLoadToken) return false;
       }
+
+      if (currentToken !== fontLoadToken) return false;
 
       installFontStyles(normalizedFont);
 
@@ -470,6 +475,7 @@ async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100)
     stopIconProtection();
     document.getElementById("typeshift-custom-styles")?.remove();
     document.getElementById("typeshift-google-font")?.remove();
+    document.getElementById("typeshift-google-font-pending")?.remove();
 
     if (normalizedSize !== 100 || normalizedLineHeight !== 100) {
       startTypographyProtection(normalizedSize, normalizedLineHeight);
