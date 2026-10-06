@@ -283,71 +283,125 @@ function stopTypographyProtection() {
   delete window.__typeshiftLineHeightScale;
 }
 
+const LOCAL_FONT_FAMILIES = new Set([
+  "Arial",
+  "Helvetica",
+  "Verdana",
+  "Trebuchet MS",
+  "Gill Sans",
+  "Optima",
+  "Arial Narrow",
+  "Century Gothic",
+  "Times New Roman",
+  "Georgia",
+  "Garamond",
+  "Palatino",
+  "Baskerville",
+  "Bodoni MT",
+  "Courier",
+  "Courier New",
+  "Lucida Console",
+  "Monaco",
+  "Consolas",
+  "Comic Sans MS",
+  "Brush Script MT",
+  "Lucida Handwriting",
+  "Impact",
+  "Arial Black",
+]);
+
+function isLocalFont(fontFamily) {
+  return LOCAL_FONT_FAMILIES.has(fontFamily);
+}
+
 function getGoogleFontUrl(fontFamily) {
   const encoded = encodeURIComponent(fontFamily).replace(/%20/g, "+");
   return `https://fonts.googleapis.com/css2?family=${encoded}&display=swap`;
 }
 
-async function loadGoogleFontStylesheet(fontFamily) {
+function getFontStylesheetId(fontFamily) {
+  return `typeshift-google-font-${encodeURIComponent(fontFamily).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+}
+
+async function waitForFont(fontFamily, timeout = 8000) {
+  if (!document.fonts) return true;
+
+  const loadPromise = document.fonts.load(`16px "${fontFamily}"`);
+
+  try {
+    const loadedFonts = await Promise.race([
+      loadPromise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Font load timed out")), timeout),
+      ),
+    ]);
+
+    if (!loadedFonts.length) {
+      throw new Error(`No loaded font face found for "${fontFamily}"`);
+    }
+
+    return true;
+  } catch (error) {
+    console.warn(`TypeShift: font "${fontFamily}" could not be loaded`, error);
+    return false;
+  }
+}
+
+async function loadGoogleFontStylesheet(fontFamily, token) {
   const styleId = "typeshift-google-font";
   const existing = document.getElementById(styleId);
 
   if (existing?.dataset.fontFamily === fontFamily) {
-    return;
+    return true;
   }
 
-  existing?.remove();
+  const link = document.createElement("link");
+  link.id = `${styleId}-pending`;
+  link.rel = "stylesheet";
+  link.href = getGoogleFontUrl(fontFamily);
+  link.dataset.fontFamily = fontFamily;
 
-  const url = getGoogleFontUrl(fontFamily);
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(
+      () => reject(new Error("Font stylesheet load timed out")),
+      8000,
+    );
 
-  try {
-    const response = await fetch(url, { cache: "force-cache" });
-    if (!response.ok) {
-      throw new Error(`Font stylesheet request failed: ${response.status}`);
-    }
+    link.onload = () => {
+      clearTimeout(timeout);
+      resolve();
+    };
 
-    const css = await response.text();
-    if (!css.includes("@font-face")) {
-      throw new Error("Google Fonts returned no font-face rules");
-    }
+    link.onerror = () => {
+      clearTimeout(timeout);
+      reject(new Error("Font stylesheet could not be loaded"));
+    };
 
-    const styleEl = document.createElement("style");
-    styleEl.id = styleId;
-    styleEl.dataset.fontFamily = fontFamily;
-    styleEl.textContent = css;
-    (document.head || document.documentElement).appendChild(styleEl);
-  } catch (error) {
-    const link = document.createElement("link");
-    link.id = styleId;
-    link.rel = "stylesheet";
-    link.href = url;
-    link.dataset.fontFamily = fontFamily;
+    (document.head || document.documentElement).appendChild(link);
+  });
 
-    await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("Font stylesheet load timed out")), 8000);
-      link.onload = () => {
-        clearTimeout(timeout);
-        resolve();
-      };
-      link.onerror = () => {
-        clearTimeout(timeout);
-        reject(new Error("Font stylesheet could not be loaded"));
-      };
-      (document.head || document.documentElement).appendChild(link);
-    });
-
-    console.warn("TypeShift: used stylesheet fallback for font loading", error);
+  if (token !== fontLoadToken) {
+    link.remove();
+    return false;
   }
-}
 
-async function waitForFont(fontFamily) {
-  if (!document.fonts) return;
+  const loaded = await waitForFont(fontFamily);
 
-  try {
-    await document.fonts.load(`16px "${fontFamily}"`);
-  } catch (error) {
-    console.warn(`TypeShift: font load check failed for "${fontFamily}"`, error);
+  if (token !== fontLoadToken) {
+    link.remove();
+    return false;
   }
+
+  if (!loaded) {
+    link.remove();
+    throw new Error(`Google Font "${fontFamily}" failed to load`);
+  }
+
+  const previous = existing;
+  link.id = styleId;
+  previous?.remove();
+
+  return true;
 }
 
 function installFontStyles(fontFamily) {
