@@ -314,92 +314,89 @@ function isLocalFont(fontFamily) {
   return LOCAL_FONT_FAMILIES.has(fontFamily);
 }
 
-function getGoogleFontUrl(fontFamily) {
-  const encoded = encodeURIComponent(fontFamily).replace(/%20/g, "+");
-  return `https://fonts.googleapis.com/css2?family=${encoded}&display=swap`;
+const LOCAL_FONT_FAMILIES = new Set([
+  "Arial",
+  "Helvetica",
+  "Verdana",
+  "Trebuchet MS",
+  "Gill Sans",
+  "Optima",
+  "Arial Narrow",
+  "Century Gothic",
+  "Times New Roman",
+  "Georgia",
+  "Garamond",
+  "Palatino",
+  "Baskerville",
+  "Bodoni MT",
+  "Courier",
+  "Courier New",
+  "Lucida Console",
+  "Monaco",
+  "Consolas",
+  "Comic Sans MS",
+  "Brush Script MT",
+  "Lucida Handwriting",
+  "Impact",
+  "Arial Black",
+]);
+
+function isLocalFont(fontFamily) {
+  return LOCAL_FONT_FAMILIES.has(fontFamily);
 }
 
-function getFontStylesheetId(fontFamily) {
-  return `typeshift-google-font-${encodeURIComponent(fontFamily).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+function waitForMessage(request) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(request, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+
+      if (!response?.success) {
+        reject(new Error(response?.error || "Font loading failed"));
+        return;
+      }
+
+      resolve(response.faces || []);
+    });
+  });
 }
 
-async function waitForFont(fontFamily, timeout = 8000) {
-  if (!document.fonts) return true;
-
-  const loadPromise = document.fonts.load(`16px "${fontFamily}"`);
-
-  try {
-    const loadedFonts = await Promise.race([
-      loadPromise,
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Font load timed out")), timeout),
-      ),
-    ]);
-
-    if (!loadedFonts.length) {
-      throw new Error(`No loaded font face found for "${fontFamily}"`);
-    }
-
-    return true;
-  } catch (error) {
-    console.warn(`TypeShift: font "${fontFamily}" could not be loaded`, error);
-    return false;
-  }
-}
-
-async function loadGoogleFontStylesheet(fontFamily, token) {
-  const styleId = "typeshift-google-font";
-  const existing = document.getElementById(styleId);
-
-  if (existing?.dataset.fontFamily === fontFamily) {
-    return true;
-  }
-
-  const link = document.createElement("link");
-  link.id = `${styleId}-pending`;
-  link.rel = "stylesheet";
-  link.href = getGoogleFontUrl(fontFamily);
-  link.dataset.fontFamily = fontFamily;
-
-  await new Promise((resolve, reject) => {
-    const timeout = setTimeout(
-      () => reject(new Error("Font stylesheet load timed out")),
-      8000,
-    );
-
-    link.onload = () => {
-      clearTimeout(timeout);
-      resolve();
-    };
-
-    link.onerror = () => {
-      clearTimeout(timeout);
-      reject(new Error("Font stylesheet could not be loaded"));
-    };
-
-    (document.head || document.documentElement).appendChild(link);
+async function loadGoogleFont(fontFamily, token) {
+  const faces = await waitForMessage({
+    action: "loadGoogleFont",
+    fontFamily,
   });
 
-  if (token !== fontLoadToken) {
-    link.remove();
-    return false;
+  if (token !== fontLoadToken) return false;
+
+  for (const face of faces) {
+    const source = `data:font/woff2;base64,${face.data}`;
+    const descriptors = {
+      style: face.style || "normal",
+      weight: face.weight || "400",
+      stretch: face.stretch || "normal",
+    };
+
+    if (face.unicodeRange) {
+      descriptors.unicodeRange = face.unicodeRange;
+    }
+
+    const font = new FontFace(fontFamily, `url("${source}")`, descriptors);
+    await font.load();
+
+    if (token !== fontLoadToken) return false;
+
+    document.fonts.add(font);
   }
 
-  const loaded = await waitForFont(fontFamily);
+  if (token !== fontLoadToken) return false;
 
-  if (token !== fontLoadToken) {
-    link.remove();
-    return false;
+  const loaded = await document.fonts.load(`16px "${fontFamily}"`);
+  if (!loaded.length) {
+    throw new Error(`No usable font face found for "${fontFamily}"`);
   }
-
-  if (!loaded) {
-    link.remove();
-    throw new Error(`Google Font "${fontFamily}" failed to load`);
-  }
-
-  const previous = existing;
-  link.id = styleId;
-  previous?.remove();
 
   return true;
 }
@@ -444,16 +441,15 @@ async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100)
       startIconProtection();
 
       if (isLocalFont(normalizedFont)) {
-        document.getElementById("typeshift-google-font")?.remove();
         appliedFontFamily = normalizedFont;
       } else if (appliedFontFamily !== normalizedFont) {
-        const loaded = await loadGoogleFontStylesheet(normalizedFont, currentToken);
+        const loaded = await loadGoogleFont(normalizedFont, currentToken);
         if (!loaded || currentToken !== fontLoadToken) return false;
 
         appliedFontFamily = normalizedFont;
       } else {
-        const loaded = await waitForFont(normalizedFont);
-        if (!loaded || currentToken !== fontLoadToken) return false;
+        const loaded = await document.fonts.load(`16px "${normalizedFont}"`);
+        if (!loaded.length || currentToken !== fontLoadToken) return false;
       }
 
       if (currentToken !== fontLoadToken) return false;
