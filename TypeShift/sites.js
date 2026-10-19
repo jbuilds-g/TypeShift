@@ -252,8 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
       else siteConfigs[domain].size = size;
       if (lineHeight === (globalConfig.lineHeight ?? 100)) delete siteConfigs[domain].lineHeight;
       else siteConfigs[domain].lineHeight = lineHeight;
-      if (!Object.keys(siteConfigs[domain]).length) delete siteConfigs[domain];
-
+      // Keep the site entry even when it inherits every setting from Global.
       persist(() => {
         renderSites();
         showStatus(`Saved ${domain}.`);

@@ -23,9 +23,11 @@ let typographyFrame = 0;
 let typographyPending = new Set();
 let fontLoadToken = 0;
 let appliedConfigurationKey = null;
+let pendingConfigurationKey = null;
+let configurationReadToken = 0;
 let appliedFontFamily = "";
 
-const typographyOriginals = new WeakMap();
+let typographyOriginals = new WeakMap();
 const typographyTouched = new Set();
 
 const TYPOGRAPHY_SKIP_SELECTOR = [
@@ -154,6 +156,16 @@ function getOriginalTypography(element) {
   let original = typographyOriginals.get(element);
   if (original) return original;
 
+  // New descendants may inherit computed sizes from ancestors that TypeShift
+  // has already scaled. Temporarily restore those ancestors while measuring
+  // this element so its baseline is not accidentally scaled a second time.
+  const restoredAncestors = [];
+  for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+    if (!typographyOriginals.has(ancestor) || !typographyTouched.has(ancestor)) continue;
+    restoreTypographyElement(ancestor);
+    restoredAncestors.push(ancestor);
+  }
+
   const computed = window.getComputedStyle(element);
   const fontSize = Number.parseFloat(computed.fontSize);
   // "normal" has no pixel value; approximate it as 1.2× the computed font size.
@@ -161,20 +173,29 @@ function getOriginalTypography(element) {
     ? fontSize * 1.2
     : Number.parseFloat(computed.lineHeight);
 
-  if (!Number.isFinite(fontSize)) return null;
+  if (Number.isFinite(fontSize)) {
+    original = {
+      fontSize,
+      lineHeight: Number.isFinite(lineHeight) ? lineHeight : null,
+      inlineFontSize: element.style.getPropertyValue("font-size"),
+      inlineFontSizePriority: element.style.getPropertyPriority("font-size"),
+      inlineLineHeight: element.style.getPropertyValue("line-height"),
+      inlineLineHeightPriority: element.style.getPropertyPriority("line-height"),
+    };
 
-  original = {
-    fontSize,
-    lineHeight: Number.isFinite(lineHeight) ? lineHeight : null,
-    inlineFontSize: element.style.getPropertyValue("font-size"),
-    inlineFontSizePriority: element.style.getPropertyPriority("font-size"),
-    inlineLineHeight: element.style.getPropertyValue("line-height"),
-    inlineLineHeightPriority: element.style.getPropertyPriority("line-height"),
-  };
+    typographyOriginals.set(element, original);
+    typographyTouched.add(element);
+  }
 
-  typographyOriginals.set(element, original);
-  typographyTouched.add(element);
-  return original;
+  const sizeScale = Number(window.__typeshiftSizeScale || 1);
+  const lineHeightScale = Number(window.__typeshiftLineHeightScale || 1);
+  restoredAncestors.reverse().forEach((ancestor) => {
+    if (ancestor.isConnected) {
+      applyTypographyToElement(ancestor, sizeScale, lineHeightScale);
+    }
+  });
+
+  return original || null;
 }
 
 function restoreTypographyElement(element) {
@@ -200,6 +221,7 @@ function restoreTypography() {
   });
   typographyTouched.clear();
   typographyPending.clear();
+  typographyOriginals = new WeakMap();
 }
 
 function applyTypographyToElement(element, sizeScale, lineHeightScale) {
@@ -431,9 +453,18 @@ async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100)
   const normalizedLineHeight = Number.isFinite(Number(lineHeight)) ? Number(lineHeight) : 100;
   const configurationKey = `enabled:${normalizedFont}:${normalizedSize}:${normalizedLineHeight}`;
 
-  if (appliedConfigurationKey === configurationKey) return true;
+  // If the requested configuration is already applied, invalidate any older
+  // font load that is still in flight. Otherwise, reuse an identical pending
+  // request instead of starting a second competing load.
+  if (appliedConfigurationKey === configurationKey) {
+    fontLoadToken++;
+    pendingConfigurationKey = null;
+    return true;
+  }
+  if (pendingConfigurationKey === configurationKey) return true;
 
   const currentToken = ++fontLoadToken;
+  pendingConfigurationKey = configurationKey;
 
   try {
     if (normalizedFont) {
@@ -463,6 +494,7 @@ async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100)
 
       queueIconProtection();
       appliedConfigurationKey = configurationKey;
+      pendingConfigurationKey = null;
       return true;
     }
 
@@ -479,10 +511,12 @@ async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100)
     }
 
     appliedConfigurationKey = configurationKey;
+    pendingConfigurationKey = null;
     return true;
   } catch (error) {
     if (currentToken === fontLoadToken) {
       appliedConfigurationKey = null;
+      pendingConfigurationKey = null;
       console.error("TypeShift: unable to apply configuration", error);
     }
     return false;
@@ -491,6 +525,7 @@ async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100)
 
 function removeFontShift() {
   fontLoadToken++;
+  pendingConfigurationKey = null;
   appliedConfigurationKey = "disabled";
   appliedFontFamily = "";
 
@@ -527,6 +562,7 @@ function resolveConfiguration(result, hostname) {
 }
 
 function applyStoredConfiguration(force = false) {
+  const requestToken = ++configurationReadToken;
   chrome.storage.local.get(
     [
       "configurationVersion",
@@ -538,6 +574,10 @@ function applyStoredConfiguration(force = false) {
       "enabled",
     ],
     (result) => {
+      // Storage callbacks can arrive out of order during rapid slider changes.
+      // Only the newest read is allowed to drive the page.
+      if (requestToken !== configurationReadToken) return;
+
       const hostname = window.location.hostname;
 
       if (result.enabled === false) {
@@ -553,7 +593,13 @@ function applyStoredConfiguration(force = false) {
         ? "disabled"
         : `enabled:${configuration.fontFamily || ""}:${configuration.size}:${configuration.lineHeight}`;
 
-      if (!force && configurationKey === appliedConfigurationKey) return;
+      if (
+        !force &&
+        configurationKey === appliedConfigurationKey &&
+        pendingConfigurationKey === null
+      ) {
+        return;
+      }
 
       if (disabled) {
         removeFontShift();
