@@ -56,7 +56,9 @@ async function loadGoogleFont(fontFamily) {
   });
 
   if (!cssResponse.ok) {
-    throw new Error(`Google Fonts stylesheet request failed: ${cssResponse.status}`);
+    throw new Error(
+      `Google Fonts stylesheet request failed: ${cssResponse.status}`,
+    );
   }
 
   const css = await cssResponse.text();

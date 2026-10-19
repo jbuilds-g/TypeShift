@@ -40,7 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function applyTheme(index) {
     currentTheme = Math.max(0, Math.min(index, themes.length - 1));
-    if (themes[currentTheme] === "light") document.body.removeAttribute("data-theme");
+    if (themes[currentTheme] === "light")
+      document.body.removeAttribute("data-theme");
     else document.body.setAttribute("data-theme", themes[currentTheme]);
     themeIcon.innerHTML = themeIcons[currentTheme];
   }
@@ -50,25 +51,37 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function isValidDomain(domain) {
-    if (typeof domain !== "string" || !domain || domain.length > 253) return false;
+    if (typeof domain !== "string" || !domain || domain.length > 253)
+      return false;
     if (domain.includes("..")) return false;
     if (domain === "localhost") return true;
-    if (/^[\d.]+$/.test(domain)) return domain.split(".").every((part) => {
-      const number = Number(part);
-      return part !== "" && Number.isInteger(number) && number >= 0 && number <= 255;
-    });
+    if (/^[\d.]+$/.test(domain))
+      return domain.split(".").every((part) => {
+        const number = Number(part);
+        return (
+          part !== "" &&
+          Number.isInteger(number) &&
+          number >= 0 &&
+          number <= 255
+        );
+      });
 
-    return domain.split(".").every((label) =>
-      label &&
-      label.length <= 63 &&
-      !label.startsWith("-") &&
-      !label.endsWith("-") &&
-      /^[a-z\d-]+$/i.test(label),
-    );
+    return domain
+      .split(".")
+      .every(
+        (label) =>
+          label &&
+          label.length <= 63 &&
+          !label.startsWith("-") &&
+          !label.endsWith("-") &&
+          /^[a-z\d-]+$/i.test(label),
+      );
   }
 
   function isValidTypographyValue(value) {
-    return Number.isInteger(value) && value >= 80 && value <= 140 && value % 5 === 0;
+    return (
+      Number.isInteger(value) && value >= 80 && value <= 140 && value % 5 === 0
+    );
   }
 
   function validateSiteConfigs(siteConfigs) {
@@ -76,9 +89,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return Object.entries(siteConfigs).every(([domain, config]) => {
       if (!isValidDomain(domain) || !isPlainObject(config)) return false;
-      if ("fontFamily" in config && typeof config.fontFamily !== "string") return false;
-      if ("size" in config && !isValidTypographyValue(config.size)) return false;
-      if ("lineHeight" in config && !isValidTypographyValue(config.lineHeight)) return false;
+      if ("fontFamily" in config && typeof config.fontFamily !== "string")
+        return false;
+      if ("size" in config && !isValidTypographyValue(config.size))
+        return false;
+      if ("lineHeight" in config && !isValidTypographyValue(config.lineHeight))
+        return false;
       return Object.keys(config).every((key) =>
         ["fontFamily", "size", "lineHeight"].includes(key),
       );
@@ -90,25 +106,44 @@ document.addEventListener("DOMContentLoaded", () => {
       return "Unsupported or invalid backup version.";
     }
     if (!isPlainObject(backup.global)) return "Invalid global configuration.";
-    if (!validateSiteConfigs(backup.sites)) return "Invalid custom site configuration.";
-    if (!Number.isInteger(backup.theme) || backup.theme < 0 || backup.theme >= themes.length) {
+    if (!validateSiteConfigs(backup.sites))
+      return "Invalid custom site configuration.";
+    if (
+      !Number.isInteger(backup.theme) ||
+      backup.theme < 0 ||
+      backup.theme >= themes.length
+    ) {
       return "Invalid theme setting.";
     }
-    if (!Array.isArray(backup.disabledDomains) || !backup.disabledDomains.every(isValidDomain)) {
+    if (
+      !Array.isArray(backup.disabledDomains) ||
+      !backup.disabledDomains.every(isValidDomain)
+    ) {
       return "Invalid disabled site configuration.";
     }
-    if (Object.keys(backup.global).some((key) =>
-      !["fontFamily", "size", "lineHeight"].includes(key),
-    )) {
+    if (
+      Object.keys(backup.global).some(
+        (key) => !["fontFamily", "size", "lineHeight"].includes(key),
+      )
+    ) {
       return "Unsupported global configuration.";
     }
-    if ("fontFamily" in backup.global && typeof backup.global.fontFamily !== "string") {
+    if (
+      "fontFamily" in backup.global &&
+      typeof backup.global.fontFamily !== "string"
+    ) {
       return "Invalid global font configuration.";
     }
-    if ("size" in backup.global && !isValidTypographyValue(backup.global.size)) {
+    if (
+      "size" in backup.global &&
+      !isValidTypographyValue(backup.global.size)
+    ) {
       return "Invalid global font size.";
     }
-    if ("lineHeight" in backup.global && !isValidTypographyValue(backup.global.lineHeight)) {
+    if (
+      "lineHeight" in backup.global &&
+      !isValidTypographyValue(backup.global.lineHeight)
+    ) {
       return "Invalid global line height.";
     }
     if ("enabled" in backup && typeof backup.enabled !== "boolean") {
@@ -118,9 +153,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function buildBackup(result) {
-    const globalConfig = isPlainObject(result.globalConfig) ? { ...result.globalConfig } : {};
+    const globalConfig = isPlainObject(result.globalConfig)
+      ? { ...result.globalConfig }
+      : {};
     const siteConfigs = isPlainObject(result.siteConfigs)
-      ? Object.fromEntries(Object.entries(result.siteConfigs).map(([domain, config]) => [domain, { ...config }]))
+      ? Object.fromEntries(
+          Object.entries(result.siteConfigs).map(([domain, config]) => [
+            domain,
+            { ...config },
+          ]),
+        )
       : {};
 
     if (!globalConfig.fontFamily && result.activeFont) {
@@ -141,20 +183,32 @@ document.addEventListener("DOMContentLoaded", () => {
       enabled: result.enabled !== false,
       global: globalConfig,
       sites: siteConfigs,
-      disabledDomains: Array.isArray(result.disabledDomains) ? result.disabledDomains : [],
+      disabledDomains: Array.isArray(result.disabledDomains)
+        ? result.disabledDomains
+        : [],
       theme: Number.isInteger(result.popupTheme) ? result.popupTheme : 0,
     };
   }
 
   function loadCurrentBackup(callback) {
     chrome.storage.local.get(
-      ["globalConfig", "siteConfigs", "activeFont", "siteFonts", "disabledDomains", "popupTheme", "enabled"],
+      [
+        "globalConfig",
+        "siteConfigs",
+        "activeFont",
+        "siteFonts",
+        "disabledDomains",
+        "popupTheme",
+        "enabled",
+      ],
       (result) => callback(buildBackup(result)),
     );
   }
 
   function downloadBackup(backup) {
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     const date = new Date().toISOString().slice(0, 10);
@@ -172,7 +226,10 @@ document.addEventListener("DOMContentLoaded", () => {
       enabled: backup.enabled !== false,
       globalConfig: { ...backup.global },
       siteConfigs: Object.fromEntries(
-        Object.entries(backup.sites).map(([domain, config]) => [domain, { ...config }]),
+        Object.entries(backup.sites).map(([domain, config]) => [
+          domain,
+          { ...config },
+        ]),
       ),
       disabledDomains: [...backup.disabledDomains],
       popupTheme: backup.theme,
@@ -209,7 +266,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function mergeBackup(imported) {
     return new Promise((resolve) => {
       chrome.storage.local.get(
-        ["globalConfig", "siteConfigs", "activeFont", "siteFonts", "disabledDomains", "popupTheme", "enabled"],
+        [
+          "globalConfig",
+          "siteConfigs",
+          "activeFont",
+          "siteFonts",
+          "disabledDomains",
+          "popupTheme",
+          "enabled",
+        ],
         async (result) => {
           const current = buildBackup(result);
           const merged = {
@@ -217,12 +282,20 @@ document.addEventListener("DOMContentLoaded", () => {
             enabled: imported.enabled,
             global: { ...current.global, ...imported.global },
             sites: { ...current.sites },
-            disabledDomains: [...new Set([...current.disabledDomains, ...imported.disabledDomains])],
+            disabledDomains: [
+              ...new Set([
+                ...current.disabledDomains,
+                ...imported.disabledDomains,
+              ]),
+            ],
             theme: imported.theme,
           };
 
           Object.entries(imported.sites).forEach(([domain, config]) => {
-            merged.sites[domain] = { ...(merged.sites[domain] || {}), ...config };
+            merged.sites[domain] = {
+              ...(merged.sites[domain] || {}),
+              ...config,
+            };
           });
 
           await saveConfiguration(merged);
@@ -241,8 +314,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function showPreview(backup) {
     pendingBackup = backup;
     previewVersion.textContent = String(backup.version);
-    previewEnabled.textContent = backup.enabled === false ? "Disabled" : "Enabled";
-    previewGlobal.textContent = backup.global.fontFamily ? backup.global.fontFamily : "Default";
+    previewEnabled.textContent =
+      backup.enabled === false ? "Disabled" : "Enabled";
+    previewGlobal.textContent = backup.global.fontFamily
+      ? backup.global.fontFamily
+      : "Default";
     previewSites.textContent = `${Object.keys(backup.sites).length} ${Object.keys(backup.sites).length === 1 ? "site" : "sites"}`;
     previewTheme.textContent = themeLabels[backup.theme];
     backupPreview.hidden = false;
@@ -300,7 +376,9 @@ document.addEventListener("DOMContentLoaded", () => {
   cancelRestoreBtn.addEventListener("click", hidePreview);
 
   chrome.storage.local.get(["popupTheme"], (result) => {
-    const storedTheme = Number.isInteger(result.popupTheme) ? result.popupTheme : 0;
+    const storedTheme = Number.isInteger(result.popupTheme)
+      ? result.popupTheme
+      : 0;
     applyTheme(Math.max(0, Math.min(storedTheme, themes.length - 1)));
     themeBtn.addEventListener("click", () => {
       applyTheme((currentTheme + 1) % themes.length);

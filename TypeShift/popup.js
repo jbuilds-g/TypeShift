@@ -10,7 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const enabledToggle = document.getElementById("enabled-toggle");
   const disabledMessage = document.getElementById("disabled-message");
-  const configurationControls = document.getElementById("configuration-controls");
+  const configurationControls = document.getElementById(
+    "configuration-controls",
+  );
   const toggleDisableBtn = document.getElementById("toggle-disable-btn");
   const resetSiteBtn = document.getElementById("reset-site-btn");
   const statusMessage = document.getElementById("status-message");
@@ -70,14 +72,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function updateHighlight(options) {
-    options.forEach((opt, idx) => opt.classList.toggle("highlighted", idx === highlightedIndex));
+    options.forEach((opt, idx) =>
+      opt.classList.toggle("highlighted", idx === highlightedIndex),
+    );
     if (highlightedIndex >= 0 && options[highlightedIndex]) {
       options[highlightedIndex].scrollIntoView({ block: "nearest" });
     }
   }
 
   function getEffectiveConfiguration() {
-    const site = activeScope === "site" && currentHostname ? siteConfigs[currentHostname] || {} : {};
+    const site =
+      activeScope === "site" && currentHostname
+        ? siteConfigs[currentHostname] || {}
+        : {};
     return {
       fontFamily: site.fontFamily || globalConfig.fontFamily || "",
       size: site.size ?? globalConfig.size ?? 100,
@@ -86,7 +93,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getEffectiveFont() {
-    if (activeScope === "site" && currentHostname && siteConfigs[currentHostname]?.fontFamily) {
+    if (
+      activeScope === "site" &&
+      currentHostname &&
+      siteConfigs[currentHostname]?.fontFamily
+    ) {
       return siteConfigs[currentHostname].fontFamily;
     }
     return globalConfig.fontFamily || "";
@@ -97,7 +108,8 @@ document.addEventListener("DOMContentLoaded", () => {
       activeScope === "site" &&
       currentHostname &&
       siteConfigs[currentHostname] &&
-      ("size" in siteConfigs[currentHostname] || "lineHeight" in siteConfigs[currentHostname]),
+      ("size" in siteConfigs[currentHostname] ||
+        "lineHeight" in siteConfigs[currentHostname]),
     );
   }
 
@@ -109,13 +121,15 @@ document.addEventListener("DOMContentLoaded", () => {
     lineHeightValue.value = config.lineHeight + "%";
     const hasOverrides = hasLocalTypographyOverrides();
     resetTypographyBtn.hidden = activeScope === "site" ? !hasOverrides : false;
-    resetTypographyBtn.disabled = activeScope === "site" ? !hasOverrides : (
-      config.size === 100 && config.lineHeight === 100
-    );
+    resetTypographyBtn.disabled =
+      activeScope === "site"
+        ? !hasOverrides
+        : config.size === 100 && config.lineHeight === 100;
     resetTypographyBtn.textContent = "Reset Typography";
-    resetTypographyBtn.title = activeScope === "site"
-      ? "Reset this site's font size and line height to the global settings"
-      : "Reset the global font size and line height to 100%";
+    resetTypographyBtn.title =
+      activeScope === "site"
+        ? "Reset this site's font size and line height to the global settings"
+        : "Reset the global font size and line height to 100%";
   }
 
   function saveTypographyValue(key, value) {
@@ -123,29 +137,40 @@ document.addEventListener("DOMContentLoaded", () => {
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) return;
     if (activeScope === "site" && currentHostname) {
-      siteConfigs[currentHostname] = { ...(siteConfigs[currentHostname] || {}), [key]: numericValue };
+      siteConfigs[currentHostname] = {
+        ...(siteConfigs[currentHostname] || {}),
+        [key]: numericValue,
+      };
     } else {
       globalConfig = { ...globalConfig, [key]: numericValue };
     }
 
-    chrome.storage.local.set({
-      configurationVersion: CONFIGURATION_VERSION,
-      globalConfig,
-      siteConfigs,
-      activeFont: globalConfig.fontFamily || "",
-      siteFonts: buildLegacySiteFonts(),
-    }, () => {
-      if (chrome.runtime.lastError) {
-        showStatus("Unable to save typography settings.", true);
-      }
-    });
+    chrome.storage.local.set(
+      {
+        configurationVersion: CONFIGURATION_VERSION,
+        globalConfig,
+        siteConfigs,
+        activeFont: globalConfig.fontFamily || "",
+        siteFonts: buildLegacySiteFonts(),
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          showStatus("Unable to save typography settings.", true);
+        }
+      },
+    );
   }
 
   function setFontValue(font, shouldApply = true) {
     selectedFontValue = font;
     dropdownTrigger.textContent = font || "Select Font";
     dropdownTrigger.style.fontFamily = font || "inherit";
-    if (shouldApply && font && !disabledDomains.includes(currentHostname) && enabled) {
+    if (
+      shouldApply &&
+      font &&
+      !disabledDomains.includes(currentHostname) &&
+      enabled
+    ) {
       saveCurrentFont();
     }
   }
@@ -193,7 +218,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const query = filterText.toLowerCase().trim();
 
     for (const [category, fonts] of Object.entries(typeShiftFonts)) {
-      const matchingFonts = fonts.filter((font) => font.toLowerCase().includes(query));
+      const matchingFonts = fonts.filter((font) =>
+        font.toLowerCase().includes(query),
+      );
       if (!matchingFonts.length) continue;
 
       const categoryHeader = document.createElement("div");
@@ -217,7 +244,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateToggleUI() {
     const isDisabled = disabledDomains.includes(currentHostname);
-    toggleDisableBtn.textContent = isDisabled ? "Enable for this website" : "Disable for this website";
+    toggleDisableBtn.textContent = isDisabled
+      ? "Enable for this website"
+      : "Disable for this website";
     toggleDisableBtn.title = isDisabled
       ? "Re-enable TypeShift on this website"
       : "Temporarily disable TypeShift on this website";
@@ -240,7 +269,8 @@ document.addEventListener("DOMContentLoaded", () => {
     siteHeading.hidden = !isSite;
     siteHeading.textContent = currentHostname || "Current website";
     resetSiteBtn.hidden = !isSite || !currentHostname;
-    toggleDisableBtn.style.display = isSite && currentHostname ? "block" : "none";
+    toggleDisableBtn.style.display =
+      isSite && currentHostname ? "block" : "none";
 
     selectedFontValue = getEffectiveFont();
     setFontValue(selectedFontValue, false);
@@ -262,7 +292,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  enabledToggle.addEventListener("change", () => setEnabled(enabledToggle.checked));
+  enabledToggle.addEventListener("change", () =>
+    setEnabled(enabledToggle.checked),
+  );
 
   fontSizeControl.addEventListener("input", () => {
     saveTypographyValue("size", fontSizeControl.value);
@@ -276,7 +308,10 @@ document.addEventListener("DOMContentLoaded", () => {
   resetTypographyBtn.addEventListener("click", () => {
     if (activeScope === "site") {
       if (!currentHostname) {
-        showStatus("This page does not have a supported website address.", true);
+        showStatus(
+          "This page does not have a supported website address.",
+          true,
+        );
         return;
       }
 
@@ -337,7 +372,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("click", (e) => {
-    if (!e.target.closest("#custom-dropdown")) dropdownMenu.classList.add("hidden");
+    if (!e.target.closest("#custom-dropdown"))
+      dropdownMenu.classList.add("hidden");
   });
 
   fontSearch.addEventListener("input", (e) => {
@@ -346,7 +382,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   fontSearch.addEventListener("keydown", (e) => {
-    const options = Array.from(fontOptionsList.querySelectorAll(".font-option"));
+    const options = Array.from(
+      fontOptionsList.querySelectorAll(".font-option"),
+    );
     if (!options.length) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -354,7 +392,8 @@ document.addEventListener("DOMContentLoaded", () => {
       updateHighlight(options);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      highlightedIndex = (highlightedIndex - 1 + options.length) % options.length;
+      highlightedIndex =
+        (highlightedIndex - 1 + options.length) % options.length;
       updateHighlight(options);
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -399,7 +438,15 @@ document.addEventListener("DOMContentLoaded", () => {
     currentHostname = getHostname(tabs[0].url);
 
     chrome.storage.local.get(
-      ["configurationVersion", "globalConfig", "siteConfigs", "activeFont", "disabledDomains", "siteFonts", "enabled"],
+      [
+        "configurationVersion",
+        "globalConfig",
+        "siteConfigs",
+        "activeFont",
+        "disabledDomains",
+        "siteFonts",
+        "enabled",
+      ],
       (result) => {
         enabled = result.enabled !== false;
         globalConfig = { ...(result.globalConfig || {}) };
@@ -428,10 +475,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         disabledDomains = result.disabledDomains || [];
-        activeScope = currentHostname &&
+        activeScope =
+          currentHostname &&
           Object.prototype.hasOwnProperty.call(siteConfigs, currentHostname)
-          ? "site"
-          : "global";
+            ? "site"
+            : "global";
         updateEnabledUI();
         updateTabs();
       },

@@ -36,7 +36,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   chrome.storage.local.get(["popupTheme"], (result) => {
-    let currentTheme = Number.isInteger(result.popupTheme) ? result.popupTheme : 0;
+    let currentTheme = Number.isInteger(result.popupTheme)
+      ? result.popupTheme
+      : 0;
     currentTheme = Math.max(0, Math.min(currentTheme, themes.length - 1));
     applyTheme(currentTheme);
     themeBtn.addEventListener("click", () => {
@@ -65,7 +67,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!url.hostname || url.username || url.password) return null;
 
     const hostname = url.hostname.toLowerCase().replace(/\.$/, "");
-    if (hostname !== "localhost" && !hostname.includes(".") && !/^[\d.]+$/.test(hostname)) {
+    if (
+      hostname !== "localhost" &&
+      !hostname.includes(".") &&
+      !/^[\d.]+$/.test(hostname)
+    ) {
       return null;
     }
     if (hostname.includes("..") || hostname.length > 253) return null;
@@ -131,7 +137,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const metaParts = [];
       if (config.fontFamily) metaParts.push(`Font: ${config.fontFamily}`);
       if (config.size !== undefined) metaParts.push(`Size: ${config.size}%`);
-      if (config.lineHeight !== undefined) metaParts.push(`Line height: ${config.lineHeight}%`);
+      if (config.lineHeight !== undefined)
+        metaParts.push(`Line height: ${config.lineHeight}%`);
       meta.textContent = metaParts.join(" · ") || "No overrides";
       info.append(domainEl, meta);
 
@@ -183,7 +190,9 @@ document.addEventListener("DOMContentLoaded", () => {
     sizeControl.min = "80";
     sizeControl.max = "140";
     sizeControl.step = "5";
-    sizeControl.value = String(siteConfigs[domain]?.size ?? globalConfig.size ?? 100);
+    sizeControl.value = String(
+      siteConfigs[domain]?.size ?? globalConfig.size ?? 100,
+    );
     sizeLabel.append(" ", sizeValue);
     sizeValue.textContent = `${sizeControl.value}%`;
     sizeControl.setAttribute("aria-label", `${domain} font size`);
@@ -201,7 +210,9 @@ document.addEventListener("DOMContentLoaded", () => {
     lineControl.min = "80";
     lineControl.max = "140";
     lineControl.step = "5";
-    lineControl.value = String(siteConfigs[domain]?.lineHeight ?? globalConfig.lineHeight ?? 100);
+    lineControl.value = String(
+      siteConfigs[domain]?.lineHeight ?? globalConfig.lineHeight ?? 100,
+    );
     lineLabel.append(" ", lineValue);
     lineValue.textContent = `${lineControl.value}%`;
     lineControl.setAttribute("aria-label", `${domain} line height`);
@@ -237,7 +248,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     cancelBtn.addEventListener("click", () => editor.remove());
     saveBtn.addEventListener("click", () => {
-      const fontFamily = picker.querySelector(".dropdown-trigger").dataset.value || "";
+      const fontFamily =
+        picker.querySelector(".dropdown-trigger").dataset.value || "";
       siteConfigs[domain] = siteConfigs[domain] || {};
 
       if (!fontFamily) {
@@ -250,7 +262,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const lineHeight = Number(lineControl.value);
       if (size === (globalConfig.size ?? 100)) delete siteConfigs[domain].size;
       else siteConfigs[domain].size = size;
-      if (lineHeight === (globalConfig.lineHeight ?? 100)) delete siteConfigs[domain].lineHeight;
+      if (lineHeight === (globalConfig.lineHeight ?? 100))
+        delete siteConfigs[domain].lineHeight;
       else siteConfigs[domain].lineHeight = lineHeight;
       // Keep the site entry even when it inherits every setting from Global.
       persist(() => {
@@ -264,7 +277,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function deleteSite(domain) {
-    if (!window.confirm(`Delete the custom configuration for ${domain}?`)) return;
+    if (!window.confirm(`Delete the custom configuration for ${domain}?`))
+      return;
     delete siteConfigs[domain];
     persist(() => {
       renderSites();
@@ -295,7 +309,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   chrome.storage.local.get(
-    ["configurationVersion", "globalConfig", "siteConfigs", "activeFont", "siteFonts"],
+    [
+      "configurationVersion",
+      "globalConfig",
+      "siteConfigs",
+      "activeFont",
+      "siteFonts",
+    ],
     (result) => {
       globalConfig = { ...(result.globalConfig || {}) };
       siteConfigs = { ...(result.siteConfigs || {}) };

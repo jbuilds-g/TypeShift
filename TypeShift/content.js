@@ -1,17 +1,48 @@
 const CONFIGURATION_VERSION = 1;
 
 const ICON_FONT_HINTS = [
-  "icon", "symbol", "glyph", "awesome", "material", "fontello", "icomoon",
-  "dashicons", "octicon", "codicon", "phosphor", "feather", "lucide", "remix",
-  "themify", "typicons", "simple-line", "linea", "devicon", "weather",
+  "icon",
+  "symbol",
+  "glyph",
+  "awesome",
+  "material",
+  "fontello",
+  "icomoon",
+  "dashicons",
+  "octicon",
+  "codicon",
+  "phosphor",
+  "feather",
+  "lucide",
+  "remix",
+  "themify",
+  "typicons",
+  "simple-line",
+  "linea",
+  "devicon",
+  "weather",
 ];
 
 const ICON_CLASS_SELECTORS = [
-  '[class*="icon-"]', '[class*="Icon"]', '[class*="fa-"]', '[class*="fas-"]',
-  '[class*="fab-"]', '[class*="far-"]', '[class*="mdi-"]', '[class*="bi-"]',
-  '[class*="ri-"]', '[class*="ti-"]', '[class*="glyphicon-"]', '[class*="codicon-"]',
-  '[class*="octicon-"]', '[class*="lucide-"]', '[class*="ph-"]', '[class*="feather-"]',
-  ".material-icons", ".material-symbols-outlined", ".material-symbols-rounded",
+  '[class*="icon-"]',
+  '[class*="Icon"]',
+  '[class*="fa-"]',
+  '[class*="fas-"]',
+  '[class*="fab-"]',
+  '[class*="far-"]',
+  '[class*="mdi-"]',
+  '[class*="bi-"]',
+  '[class*="ri-"]',
+  '[class*="ti-"]',
+  '[class*="glyphicon-"]',
+  '[class*="codicon-"]',
+  '[class*="octicon-"]',
+  '[class*="lucide-"]',
+  '[class*="ph-"]',
+  '[class*="feather-"]',
+  ".material-icons",
+  ".material-symbols-outlined",
+  ".material-symbols-rounded",
   ".material-symbols-sharp",
 ];
 
@@ -31,9 +62,28 @@ let typographyOriginals = new WeakMap();
 const typographyTouched = new Set();
 
 const TYPOGRAPHY_SKIP_SELECTOR = [
-  "html", "head", "body", "script", "style", "link", "meta", "title",
-  "svg", "path", "symbol", "use", "img", "video", "audio", "canvas",
-  "iframe", "object", "embed", "br", "hr", "[hidden]",
+  "html",
+  "head",
+  "body",
+  "script",
+  "style",
+  "link",
+  "meta",
+  "title",
+  "svg",
+  "path",
+  "symbol",
+  "use",
+  "img",
+  "video",
+  "audio",
+  "canvas",
+  "iframe",
+  "object",
+  "embed",
+  "br",
+  "hr",
+  "[hidden]",
   '[aria-hidden="true"]',
   "[data-typeshift-icon-font]",
   ...ICON_CLASS_SELECTORS,
@@ -41,8 +91,20 @@ const TYPOGRAPHY_SKIP_SELECTOR = [
 
 // Ancestor exclusions omit html/head/body so page text remains eligible.
 const TYPOGRAPHY_SKIP_ANCESTOR_SELECTOR = [
-  "svg", "path", "symbol", "use", "img", "video", "audio", "canvas",
-  "iframe", "object", "embed", "br", "hr", "[hidden]",
+  "svg",
+  "path",
+  "symbol",
+  "use",
+  "img",
+  "video",
+  "audio",
+  "canvas",
+  "iframe",
+  "object",
+  "embed",
+  "br",
+  "hr",
+  "[hidden]",
   '[aria-hidden="true"]',
   "[data-typeshift-icon-font]",
   ...ICON_CLASS_SELECTORS,
@@ -143,12 +205,14 @@ function stopIconProtection() {
 function isTypographyCandidate(element) {
   if (!(element instanceof HTMLElement)) return false;
   if (element.matches(TYPOGRAPHY_SKIP_SELECTOR)) return false;
-  if (element.parentElement?.closest(TYPOGRAPHY_SKIP_ANCESTOR_SELECTOR)) return false;
+  if (element.parentElement?.closest(TYPOGRAPHY_SKIP_ANCESTOR_SELECTOR))
+    return false;
 
   // Scale elements that own text nodes, not every layout container that
   // happens to contain text somewhere in its descendants.
   return Array.from(element.childNodes).some(
-    (node) => node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()),
+    (node) =>
+      node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()),
   );
 }
 
@@ -160,8 +224,13 @@ function getOriginalTypography(element) {
   // has already scaled. Temporarily restore those ancestors while measuring
   // this element so its baseline is not accidentally scaled a second time.
   const restoredAncestors = [];
-  for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
-    if (!typographyOriginals.has(ancestor) || !typographyTouched.has(ancestor)) continue;
+  for (
+    let ancestor = element.parentElement;
+    ancestor;
+    ancestor = ancestor.parentElement
+  ) {
+    if (!typographyOriginals.has(ancestor) || !typographyTouched.has(ancestor))
+      continue;
     restoreTypographyElement(ancestor);
     restoredAncestors.push(ancestor);
   }
@@ -169,9 +238,10 @@ function getOriginalTypography(element) {
   const computed = window.getComputedStyle(element);
   const fontSize = Number.parseFloat(computed.fontSize);
   // "normal" has no pixel value; approximate it as 1.2× the computed font size.
-  const lineHeight = computed.lineHeight === "normal"
-    ? fontSize * 1.2
-    : Number.parseFloat(computed.lineHeight);
+  const lineHeight =
+    computed.lineHeight === "normal"
+      ? fontSize * 1.2
+      : Number.parseFloat(computed.lineHeight);
 
   if (Number.isFinite(fontSize)) {
     original = {
@@ -180,7 +250,8 @@ function getOriginalTypography(element) {
       inlineFontSize: element.style.getPropertyValue("font-size"),
       inlineFontSizePriority: element.style.getPropertyPriority("font-size"),
       inlineLineHeight: element.style.getPropertyValue("line-height"),
-      inlineLineHeightPriority: element.style.getPropertyPriority("line-height"),
+      inlineLineHeightPriority:
+        element.style.getPropertyPriority("line-height"),
     };
 
     typographyOriginals.set(element, original);
@@ -203,13 +274,21 @@ function restoreTypographyElement(element) {
   if (!original || !element.isConnected) return;
 
   if (original.inlineFontSize) {
-    element.style.setProperty("font-size", original.inlineFontSize, original.inlineFontSizePriority);
+    element.style.setProperty(
+      "font-size",
+      original.inlineFontSize,
+      original.inlineFontSizePriority,
+    );
   } else {
     element.style.removeProperty("font-size");
   }
 
   if (original.inlineLineHeight) {
-    element.style.setProperty("line-height", original.inlineLineHeight, original.inlineLineHeightPriority);
+    element.style.setProperty(
+      "line-height",
+      original.inlineLineHeight,
+      original.inlineLineHeightPriority,
+    );
   } else {
     element.style.removeProperty("line-height");
   }
@@ -231,9 +310,17 @@ function applyTypographyToElement(element, sizeScale, lineHeightScale) {
   if (!original) return;
 
   if (sizeScale !== 1) {
-    element.style.setProperty("font-size", `${original.fontSize * sizeScale}px`, "important");
+    element.style.setProperty(
+      "font-size",
+      `${original.fontSize * sizeScale}px`,
+      "important",
+    );
   } else if (original.inlineFontSize) {
-    element.style.setProperty("font-size", original.inlineFontSize, original.inlineFontSizePriority);
+    element.style.setProperty(
+      "font-size",
+      original.inlineFontSize,
+      original.inlineFontSizePriority,
+    );
   } else {
     element.style.removeProperty("font-size");
   }
@@ -245,7 +332,11 @@ function applyTypographyToElement(element, sizeScale, lineHeightScale) {
       "important",
     );
   } else if (original.inlineLineHeight) {
-    element.style.setProperty("line-height", original.inlineLineHeight, original.inlineLineHeightPriority);
+    element.style.setProperty(
+      "line-height",
+      original.inlineLineHeight,
+      original.inlineLineHeightPriority,
+    );
   } else {
     element.style.removeProperty("line-height");
   }
@@ -303,7 +394,9 @@ function startTypographyProtection(size = 100, lineHeight = 100) {
 
       if (
         mutation.type === "attributes" &&
-        ["class", "hidden", "aria-hidden", "role"].includes(mutation.attributeName)
+        ["class", "hidden", "aria-hidden", "role"].includes(
+          mutation.attributeName,
+        )
       ) {
         queueTypography(mutation.target);
       }
@@ -447,10 +540,17 @@ function installFontStyles(fontFamily) {
   `;
 }
 
-async function applyConfiguration(fontFamily = "", size = 100, lineHeight = 100) {
-  const normalizedFont = typeof fontFamily === "string" ? fontFamily.trim() : "";
+async function applyConfiguration(
+  fontFamily = "",
+  size = 100,
+  lineHeight = 100,
+) {
+  const normalizedFont =
+    typeof fontFamily === "string" ? fontFamily.trim() : "";
   const normalizedSize = Number.isFinite(Number(size)) ? Number(size) : 100;
-  const normalizedLineHeight = Number.isFinite(Number(lineHeight)) ? Number(lineHeight) : 100;
+  const normalizedLineHeight = Number.isFinite(Number(lineHeight))
+    ? Number(lineHeight)
+    : 100;
   const configurationKey = `enabled:${normalizedFont}:${normalizedSize}:${normalizedLineHeight}`;
 
   // If the requested configuration is already applied, invalidate any older
@@ -640,23 +740,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === "applyFont") {
-    chrome.storage.local.get(["enabled", "globalConfig", "siteConfigs"], async (result) => {
-      if (result.enabled === false) {
-        removeFontShift();
-        sendResponse({ success: false, disabled: true });
-        return;
-      }
+    chrome.storage.local.get(
+      ["enabled", "globalConfig", "siteConfigs"],
+      async (result) => {
+        if (result.enabled === false) {
+          removeFontShift();
+          sendResponse({ success: false, disabled: true });
+          return;
+        }
 
-      const globalConfig = result.globalConfig || {};
-      const siteConfig = result.siteConfigs?.[window.location.hostname] || {};
-      const success = await applyConfiguration(
-        request.fontFamily,
-        siteConfig.size ?? globalConfig.size ?? 100,
-        siteConfig.lineHeight ?? globalConfig.lineHeight ?? 100,
-      );
+        const globalConfig = result.globalConfig || {};
+        const siteConfig = result.siteConfigs?.[window.location.hostname] || {};
+        const success = await applyConfiguration(
+          request.fontFamily,
+          siteConfig.size ?? globalConfig.size ?? 100,
+          siteConfig.lineHeight ?? globalConfig.lineHeight ?? 100,
+        );
 
-      sendResponse({ success });
-    });
+        sendResponse({ success });
+      },
+    );
     return true;
   }
 
