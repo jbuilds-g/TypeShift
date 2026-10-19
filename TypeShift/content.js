@@ -313,38 +313,6 @@ const LOCAL_FONT_FAMILIES = new Set([
 function isLocalFont(fontFamily) {
   return LOCAL_FONT_FAMILIES.has(fontFamily);
 }
-
-const LOCAL_FONT_FAMILIES = new Set([
-  "Arial",
-  "Helvetica",
-  "Verdana",
-  "Trebuchet MS",
-  "Gill Sans",
-  "Optima",
-  "Arial Narrow",
-  "Century Gothic",
-  "Times New Roman",
-  "Georgia",
-  "Garamond",
-  "Palatino",
-  "Baskerville",
-  "Bodoni MT",
-  "Courier",
-  "Courier New",
-  "Lucida Console",
-  "Monaco",
-  "Consolas",
-  "Comic Sans MS",
-  "Brush Script MT",
-  "Lucida Handwriting",
-  "Impact",
-  "Arial Black",
-]);
-
-function isLocalFont(fontFamily) {
-  return LOCAL_FONT_FAMILIES.has(fontFamily);
-}
-
 function waitForMessage(request) {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(request, (response) => {
