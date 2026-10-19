@@ -1,0 +1,37 @@
+name: Validate extension
+
+on:
+  push:
+    branches:
+      - development
+  pull_request:
+    branches:
+      - development
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            node --check "$file"
+          done < <(find TypeShift -type f -name '*.js' -print0)
+
+      - name: Validate extension manifests
+        run: |
+          node -e "for (const file of ['TypeShift/manifest.json', 'TypeShift/manifest.firefox.json']) { JSON.parse(require('node:fs').readFileSync(file, 'utf8')); console.log('Valid JSON:', file); }"
