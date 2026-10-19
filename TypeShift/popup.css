@@ -447,6 +447,38 @@ body[data-theme="pitch-black"] .settings-link {
 body[data-theme="pitch-black"] .settings-link:hover {
   background: #28246a;
 }
+.compatibility-note {
+  margin-top: 12px;
+  padding: 9px 10px;
+  border-top: 1px solid #d1d5db;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.compatibility-note-title {
+  display: block;
+  margin-bottom: 3px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+}
+.compatibility-note p {
+  margin: 0;
+}
+body[data-theme="dark"] .compatibility-note {
+  border-color: #4b5563;
+  color: #9ca3af;
+}
+body[data-theme="dark"] .compatibility-note-title {
+  color: #d1d5db;
+}
+body[data-theme="pitch-black"] .compatibility-note {
+  border-color: #27272a;
+  color: #a1a1aa;
+}
+body[data-theme="pitch-black"] .compatibility-note-title {
+  color: #d4d4d8;
+}
 #status-message {
   display: none;
   margin-top: 12px;
