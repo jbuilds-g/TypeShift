@@ -196,6 +196,27 @@ button:hover {
   border-top: 1px solid #e2e8f0;
 }
 
+.site-typography-editor {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.site-typography-editor input[type="range"] {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.site-typography-editor label output {
+  margin-left: 4px;
+  color: #64748b;
+  font-weight: 400;
+}
+
 .editor-actions {
   display: flex;
   align-items: end;
@@ -394,6 +415,10 @@ body[data-theme="pitch-black"] .site-count {
   }
 
   .editor {
+    grid-template-columns: 1fr;
+  }
+
+  .site-typography-editor {
     grid-template-columns: 1fr;
   }
 

@@ -13,8 +13,23 @@
           <h1>Sites</h1>
           <p>Manage websites with custom TypeShift settings.</p>
         </div>
-        <button id="theme-toggle" class="theme-btn" type="button" aria-label="Toggle theme">
-          <svg id="theme-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+        <button
+          id="theme-toggle"
+          class="theme-btn"
+          type="button"
+          aria-label="Toggle theme"
+        >
+          <svg
+            id="theme-icon"
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ></svg>
         </button>
       </header>
 
@@ -27,7 +42,14 @@
         <form id="add-site-form" class="add-form">
           <label for="domain-input">Domain</label>
           <div class="add-row">
-            <input id="domain-input" name="domain" type="text" placeholder="example.com" autocomplete="off" required />
+            <input
+              id="domain-input"
+              name="domain"
+              type="text"
+              placeholder="example.com"
+              autocomplete="off"
+              required
+            />
             <button type="submit">Add</button>
           </div>
           <p class="hint">Enter a hostname or a full website URL.</p>
@@ -42,7 +64,9 @@
         <div id="sites-list" class="sites-list"></div>
         <div id="empty-state" class="empty-state" hidden>
           <strong>No custom sites</strong>
-          <span>Sites configured from the “This Site” tab will appear here.</span>
+          <span
+            >Sites configured from the “This Site” tab will appear here.</span
+          >
         </div>
       </section>
 

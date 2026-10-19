@@ -48,12 +48,16 @@ function createFontPicker({ selectedFont = "", onChange }) {
       resetOption.className = "font-option picker-reset-option";
       resetOption.textContent = "Use global font";
       resetOption.setAttribute("role", "option");
-      resetOption.addEventListener("click", () => selectValue("", "Use global font"));
+      resetOption.addEventListener("click", () =>
+        selectValue("", "Use global font"),
+      );
       list.appendChild(resetOption);
     }
 
     for (const [category, fonts] of Object.entries(typeShiftFonts)) {
-      const matchingFonts = fonts.filter((font) => font.toLowerCase().includes(query));
+      const matchingFonts = fonts.filter((font) =>
+        font.toLowerCase().includes(query),
+      );
       if (!matchingFonts.length) continue;
 
       const header = document.createElement("div");
@@ -94,7 +98,8 @@ function createFontPicker({ selectedFont = "", onChange }) {
       updateHighlight(options);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      highlightedIndex = (highlightedIndex - 1 + options.length) % options.length;
+      highlightedIndex =
+        (highlightedIndex - 1 + options.length) % options.length;
       updateHighlight(options);
     } else if (event.key === "Enter") {
       event.preventDefault();
