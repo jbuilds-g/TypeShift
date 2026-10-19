@@ -37,6 +37,15 @@ const TYPOGRAPHY_SKIP_SELECTOR = [
   ...ICON_CLASS_SELECTORS,
 ].join(",");
 
+// Ancestor exclusions omit html/head/body so page text remains eligible.
+const TYPOGRAPHY_SKIP_ANCESTOR_SELECTOR = [
+  "svg", "path", "symbol", "use", "img", "video", "audio", "canvas",
+  "iframe", "object", "embed", "br", "hr", "[hidden]",
+  '[aria-hidden="true"]',
+  "[data-typeshift-icon-font]",
+  ...ICON_CLASS_SELECTORS,
+].join(",");
+
 function detectIcons() {
   const iconSignatures = [
     'link[href*="font-awesome"]',
@@ -132,7 +141,7 @@ function stopIconProtection() {
 function isTypographyCandidate(element) {
   if (!(element instanceof HTMLElement)) return false;
   if (element.matches(TYPOGRAPHY_SKIP_SELECTOR)) return false;
-  if (element.closest(TYPOGRAPHY_SKIP_SELECTOR)) return false;
+  if (element.parentElement?.closest(TYPOGRAPHY_SKIP_ANCESTOR_SELECTOR)) return false;
   return Boolean(element.textContent?.trim());
 }
 
@@ -142,8 +151,9 @@ function getOriginalTypography(element) {
 
   const computed = window.getComputedStyle(element);
   const fontSize = Number.parseFloat(computed.fontSize);
+  // "normal" has no pixel value; approximate it as 1.2× the computed font size.
   const lineHeight = computed.lineHeight === "normal"
-    ? null
+    ? fontSize * 1.2
     : Number.parseFloat(computed.lineHeight);
 
   if (!Number.isFinite(fontSize)) return null;
@@ -195,6 +205,10 @@ function applyTypographyToElement(element, sizeScale, lineHeightScale) {
 
   if (sizeScale !== 1) {
     element.style.setProperty("font-size", `${original.fontSize * sizeScale}px`, "important");
+  } else if (original.inlineFontSize) {
+    element.style.setProperty("font-size", original.inlineFontSize, original.inlineFontSizePriority);
+  } else {
+    element.style.removeProperty("font-size");
   }
 
   if (lineHeightScale !== 1 && original.lineHeight !== null) {
@@ -203,6 +217,10 @@ function applyTypographyToElement(element, sizeScale, lineHeightScale) {
       `${original.lineHeight * lineHeightScale}px`,
       "important",
     );
+  } else if (original.inlineLineHeight) {
+    element.style.setProperty("line-height", original.inlineLineHeight, original.inlineLineHeightPriority);
+  } else {
+    element.style.removeProperty("line-height");
   }
 }
 
