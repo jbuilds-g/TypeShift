@@ -128,7 +128,11 @@ document.addEventListener("DOMContentLoaded", () => {
       domainEl.textContent = domain;
       const meta = document.createElement("div");
       meta.className = "site-meta";
-      meta.textContent = config.fontFamily ? `Font: ${config.fontFamily}` : "No overrides";
+      const metaParts = [];
+      if (config.fontFamily) metaParts.push(`Font: ${config.fontFamily}`);
+      if (config.size !== undefined) metaParts.push(`Size: ${config.size}%`);
+      if (config.lineHeight !== undefined) metaParts.push(`Line height: ${config.lineHeight}%`);
+      meta.textContent = metaParts.join(" · ") || "No overrides";
       info.append(domainEl, meta);
 
       const actions = document.createElement("div");
@@ -167,6 +171,58 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     field.append(label, picker);
 
+    const typography = document.createElement("div");
+    typography.className = "site-typography-editor";
+
+    const sizeField = document.createElement("div");
+    const sizeLabel = document.createElement("label");
+    const sizeValue = document.createElement("output");
+    const sizeControl = document.createElement("input");
+    sizeLabel.textContent = "Font size";
+    sizeControl.type = "range";
+    sizeControl.min = "80";
+    sizeControl.max = "140";
+    sizeControl.step = "5";
+    sizeControl.value = String(siteConfigs[domain]?.size ?? globalConfig.size ?? 100);
+    sizeLabel.append(" ", sizeValue);
+    sizeValue.textContent = `${sizeControl.value}%`;
+    sizeControl.setAttribute("aria-label", `${domain} font size`);
+    sizeControl.addEventListener("input", () => {
+      sizeValue.textContent = `${sizeControl.value}%`;
+    });
+    sizeField.append(sizeLabel, sizeControl);
+
+    const lineField = document.createElement("div");
+    const lineLabel = document.createElement("label");
+    const lineValue = document.createElement("output");
+    const lineControl = document.createElement("input");
+    lineLabel.textContent = "Line height";
+    lineControl.type = "range";
+    lineControl.min = "80";
+    lineControl.max = "140";
+    lineControl.step = "5";
+    lineControl.value = String(siteConfigs[domain]?.lineHeight ?? globalConfig.lineHeight ?? 100);
+    lineLabel.append(" ", lineValue);
+    lineValue.textContent = `${lineControl.value}%`;
+    lineControl.setAttribute("aria-label", `${domain} line height`);
+    lineControl.addEventListener("input", () => {
+      lineValue.textContent = `${lineControl.value}%`;
+    });
+    lineField.append(lineLabel, lineControl);
+
+    const resetTypographyBtn = document.createElement("button");
+    resetTypographyBtn.type = "button";
+    resetTypographyBtn.className = "cancel-btn";
+    resetTypographyBtn.textContent = "Reset typography";
+    resetTypographyBtn.addEventListener("click", () => {
+      sizeControl.value = String(globalConfig.size ?? 100);
+      lineControl.value = String(globalConfig.lineHeight ?? 100);
+      sizeValue.textContent = `${sizeControl.value}%`;
+      lineValue.textContent = `${lineControl.value}%`;
+    });
+
+    typography.append(sizeField, lineField, resetTypographyBtn);
+
     const actions = document.createElement("div");
     actions.className = "editor-actions";
     const saveBtn = document.createElement("button");
@@ -190,13 +246,21 @@ document.addEventListener("DOMContentLoaded", () => {
         siteConfigs[domain].fontFamily = fontFamily;
       }
 
+      const size = Number(sizeControl.value);
+      const lineHeight = Number(lineControl.value);
+      if (size === (globalConfig.size ?? 100)) delete siteConfigs[domain].size;
+      else siteConfigs[domain].size = size;
+      if (lineHeight === (globalConfig.lineHeight ?? 100)) delete siteConfigs[domain].lineHeight;
+      else siteConfigs[domain].lineHeight = lineHeight;
+      if (!Object.keys(siteConfigs[domain]).length) delete siteConfigs[domain];
+
       persist(() => {
         renderSites();
         showStatus(`Saved ${domain}.`);
       });
     });
 
-    editor.append(field, actions);
+    editor.append(field, typography, actions);
     card.appendChild(editor);
   }
 
