@@ -41,7 +41,7 @@
 <a href="https://addons.mozilla.org/firefox/addon/typeshift-ext/"><img src="https://blog.mozilla.org/addons/files/2020/04/get-the-addon-fx-apr-2020.svg" alt="Download from Mozilla Add-ons" height="48" /></a>
 
 2. **Manual Installation (.xpi):**
-   - Download `typeshift_ext-1.3.0.xpi` from [Releases](https://github.com/jbuilds-g/TypeShift/releases/latest).
+   - Download `typeshift_ext-1.4.0.xpi` from [Releases](https://github.com/jbuilds-g/TypeShift/releases/latest).
    - Open `about:addons` in Firefox.
    - Click the gear icon and select **Install Add-on From File...**.
 
@@ -52,7 +52,7 @@
  <a href="https://chromewebstore.google.com/detail/fjjgfiknkoijbedfcpfeckaifhfmhonm?utm_source=item-share-cb"><img src="https://github.com/user-attachments/assets/7a829ba4-dcd0-452b-922a-5efacbfda498" alt="Download from Chrome Web Store" height="48" /></a>
 
 2. **Manual Unpacked Loading:**
-   - Download `typeshift-chrome-v1.3.0.zip` from [Releases](https://github.com/jbuilds-g/TypeShift/releases/latest).
+   - Download `typeshift-chrome-v1.4.0.zip` from [Releases](https://github.com/jbuilds-g/TypeShift/releases/latest).
    - Extract the archive to a local directory.
    - Open `chrome://extensions` in your browser.
    - Enable **Developer Mode** in the top-right corner.
