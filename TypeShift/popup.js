@@ -286,15 +286,15 @@ document.addEventListener("DOMContentLoaded", () => {
   enabledToggle.addEventListener("change", () => setEnabled(enabledToggle.checked));
 
   fontSizeControl.addEventListener("input", () => {
-    fontSizeValue.value = fontSizeControl.value + "%";
-    saveTypographyValue("size", fontSizeControl.value, false);
+    saveTypographyValue("size", fontSizeControl.value);
+    updateTypographyControls();
   });
   fontSizeControl.addEventListener("change", () => {
     saveTypographyValue("size", fontSizeControl.value);
   });
   lineHeightControl.addEventListener("input", () => {
-    lineHeightValue.value = lineHeightControl.value + "%";
-    saveTypographyValue("lineHeight", lineHeightControl.value, false);
+    saveTypographyValue("lineHeight", lineHeightControl.value);
+    updateTypographyControls();
   });
   lineHeightControl.addEventListener("change", () => {
     saveTypographyValue("lineHeight", lineHeightControl.value);
