@@ -142,7 +142,12 @@ function isTypographyCandidate(element) {
   if (!(element instanceof HTMLElement)) return false;
   if (element.matches(TYPOGRAPHY_SKIP_SELECTOR)) return false;
   if (element.parentElement?.closest(TYPOGRAPHY_SKIP_ANCESTOR_SELECTOR)) return false;
-  return Boolean(element.textContent?.trim());
+
+  // Scale elements that own text nodes, not every layout container that
+  // happens to contain text somewhere in its descendants.
+  return Array.from(element.childNodes).some(
+    (node) => node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()),
+  );
 }
 
 function getOriginalTypography(element) {
@@ -236,17 +241,25 @@ function queueTypography(element = document.body) {
 
     const sizeScale = Number(window.__typeshiftSizeScale || 1);
     const lineHeightScale = Number(window.__typeshiftLineHeightScale || 1);
+    const candidates = new Set();
 
     pending.forEach((root) => {
       if (!root.isConnected) return;
 
-      if (root instanceof HTMLElement) {
-        applyTypographyToElement(root, sizeScale, lineHeightScale);
+      if (root instanceof HTMLElement && isTypographyCandidate(root)) {
+        candidates.add(root);
       }
 
       root.querySelectorAll?.("*").forEach((element) => {
-        applyTypographyToElement(element, sizeScale, lineHeightScale);
+        if (isTypographyCandidate(element)) candidates.add(element);
       });
+    });
+
+    // Snapshot every original computed value before changing any styles.
+    // Otherwise a child's baseline can accidentally include a scaled parent.
+    candidates.forEach((candidate) => getOriginalTypography(candidate));
+    candidates.forEach((candidate) => {
+      applyTypographyToElement(candidate, sizeScale, lineHeightScale);
     });
   });
 }
