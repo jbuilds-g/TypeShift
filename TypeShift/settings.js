@@ -67,13 +67,21 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  function isValidTypographyValue(value) {
+    return Number.isInteger(value) && value >= 80 && value <= 140 && value % 5 === 0;
+  }
+
   function validateSiteConfigs(siteConfigs) {
     if (!isPlainObject(siteConfigs)) return false;
 
     return Object.entries(siteConfigs).every(([domain, config]) => {
       if (!isValidDomain(domain) || !isPlainObject(config)) return false;
       if ("fontFamily" in config && typeof config.fontFamily !== "string") return false;
-      return Object.keys(config).every((key) => key === "fontFamily");
+      if ("size" in config && !isValidTypographyValue(config.size)) return false;
+      if ("lineHeight" in config && !isValidTypographyValue(config.lineHeight)) return false;
+      return Object.keys(config).every((key) =>
+        ["fontFamily", "size", "lineHeight"].includes(key),
+      );
     });
   }
 
@@ -89,11 +97,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!Array.isArray(backup.disabledDomains) || !backup.disabledDomains.every(isValidDomain)) {
       return "Invalid disabled site configuration.";
     }
-    if (Object.keys(backup.global).some((key) => key !== "fontFamily")) {
+    if (Object.keys(backup.global).some((key) =>
+      !["fontFamily", "size", "lineHeight"].includes(key),
+    )) {
       return "Unsupported global configuration.";
     }
     if ("fontFamily" in backup.global && typeof backup.global.fontFamily !== "string") {
       return "Invalid global font configuration.";
+    }
+    if ("size" in backup.global && !isValidTypographyValue(backup.global.size)) {
+      return "Invalid global font size.";
+    }
+    if ("lineHeight" in backup.global && !isValidTypographyValue(backup.global.lineHeight)) {
+      return "Invalid global line height.";
     }
     if ("enabled" in backup && typeof backup.enabled !== "boolean") {
       return "Invalid TypeShift enabled state.";
