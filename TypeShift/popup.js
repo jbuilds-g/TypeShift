@@ -107,10 +107,12 @@ document.addEventListener("DOMContentLoaded", () => {
     lineHeightControl.value = config.lineHeight;
     fontSizeValue.value = config.size + "%";
     lineHeightValue.value = config.lineHeight + "%";
-    resetTypographyBtn.hidden = activeScope === "site"
-      ? !hasLocalTypographyOverrides()
-      : false;
-    resetTypographyBtn.textContent = activeScope === "site" ? "Reset Typography" : "Reset Typography";
+    const hasOverrides = hasLocalTypographyOverrides();
+    resetTypographyBtn.hidden = activeScope === "site" ? !hasOverrides : false;
+    resetTypographyBtn.disabled = activeScope === "site" ? !hasOverrides : (
+      config.size === 100 && config.lineHeight === 100
+    );
+    resetTypographyBtn.textContent = "Reset Typography";
     resetTypographyBtn.title = activeScope === "site"
       ? "Reset this site's font size and line height to the global settings"
       : "Reset the global font size and line height to 100%";
@@ -299,16 +301,25 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   resetTypographyBtn.addEventListener("click", () => {
-    if (activeScope === "site" && currentHostname) {
-      const site = siteConfigs[currentHostname];
-      if (!site) return;
+    if (activeScope === "site") {
+      if (!currentHostname) {
+        showStatus("This page does not have a supported website address.", true);
+        return;
+      }
+
+      const site = siteConfigs[currentHostname] || {};
       const nextSite = { ...site };
       delete nextSite.size;
       delete nextSite.lineHeight;
       if (Object.keys(nextSite).length) siteConfigs[currentHostname] = nextSite;
       else delete siteConfigs[currentHostname];
+
       chrome.storage.local.set(
-        { siteConfigs, siteFonts: buildLegacySiteFonts(), configurationVersion: CONFIGURATION_VERSION },
+        {
+          configurationVersion: CONFIGURATION_VERSION,
+          siteConfigs,
+          siteFonts: buildLegacySiteFonts(),
+        },
         () => {
           updateTypographyControls();
           applyConfigurationToCurrentTab();
