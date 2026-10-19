@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TypeShift",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Cleanly shift the typography of any website while protecting native icon fonts.",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": [
