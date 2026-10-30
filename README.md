@@ -6,6 +6,13 @@
 
 ---
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0.html)
+![Version](https://img.shields.io/github/v/release/jbuilds-g/0FluffStart?logo=github&label=Release&cacheSeconds=3600)
+![Platform: Extension](https://img.shields.io/badge/Platform-7C%20Extension-brightgreen)
+![downloads](https://img.shields.io/github/downloads/jbuilds-g/TypeShift/total?logo=github&label=Downloads&cacheSeconds=3600)
+
+---
+
 ## 🚀 Features
 
 - **Curated Font Library:** Choose from 50+ professional fonts across Sans-Serif, Serif, Monospace, Handwriting, and Display categories.
