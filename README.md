@@ -8,7 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 ![Version](https://img.shields.io/github/v/release/jbuilds-g/TypeShift?logo=github&label=Release&cacheSeconds=3600)
-![Platform: Extension](https://img.shields.io/badge/Platform-7C%20Extension-brightgreen)
+![Platform: Extension](https://img.shields.io/badge/Platform-20Extension-brightgreen)
 ![downloads](https://img.shields.io/github/downloads/jbuilds-g/TypeShift/total?logo=github&label=Downloads&cacheSeconds=3600)
 
 ---
